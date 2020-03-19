@@ -46,7 +46,7 @@ typedef struct {
 typedef struct {
   char *name;
   uint8_t cycles;
-  void (*function)(uint16_t opcode);
+  void (*function)(uint32_t opcode);
 } Instruction_t;
 
 static void mcu_init(void);
