@@ -16,7 +16,7 @@ static Instruction_t *find_opcode(uint8_t first_byte) {
     }
   }
   // opcode not found!
-  return XXX;
+  return NULL;
 }
 
 static ATmega328p_t mcu;
