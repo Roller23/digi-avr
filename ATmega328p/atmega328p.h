@@ -2,7 +2,7 @@
 #define __ATMEGA328P_
 
 #include <stdint.h>
-#include "instrctions.h"
+#include <stdbool.h>
 
 typedef uint8_t byte;
 typedef uint8_t bit;
@@ -46,13 +46,17 @@ typedef struct {
 
 typedef struct {
   char *name;
-  uint8_t cycles;
   void (*function)(uint32_t opcode);
   uint8_t mask1; // 1 for all fixed bits, 0 for variables
   uint8_t mask2; // 1 for all fixed 1s, 0 for all fixed 0s and variables
+  uint8_t cycles;
 } Instruction_t;
 
-static void mcu_init(void);
+
+// API
+void mcu_init(void);
+
+static bool load_hex_to_flash(const char *filename);
 static Instruction_t *find_opcode(uint8_t first_byte);
 
 static uint16_t X_reg_get(void);

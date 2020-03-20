@@ -1,16 +1,17 @@
-#include "atmega328p.h";
+#include "atmega328p.h"
+#include "instrctions.h"
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-static Instruction_t opcodes[130];
-static int added_opcodes = 0;
+static Instruction_t opcodes[] = {
+  // fill in all opcodes
+};
 
-static void add_op(char *n, void (*f)(uint32_t), uint8_t m1, uint8_t m2, uint8_t c) {
-  // name, function, mask1, mask2, cycles
-  opcodes[added_opcodes++] = (Instruction_t){n, f, m1, m2, c};
-}
+static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
 static Instruction_t *find_opcode(uint8_t first_byte) {
-  for (int i = 0; i < added_opcodes; i++) {
+  for (int i = 0; i < opcodes_count; i++) {
     if ((opcodes[i].mask1 & first_byte) == opcodes[i].mask2) {
       return &opcodes[i];
     }
@@ -21,23 +22,63 @@ static Instruction_t *find_opcode(uint8_t first_byte) {
 
 static ATmega328p_t mcu;
 
-static void mcu_init(void) {
+void mcu_init(void) {
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
   mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
-  mcu.sp = &mcu.RAM[RAM_SIZE];
+  mcu.sp = sizeof(mcu.data_memory);
   mcu.pc = 0;
   mcu.SREG.value = 0;
   memset(mcu.data_memory, 0, sizeof(mcu.data_memory));
 
-  // opcodes library
+  load_hex_to_flash("./test.hex");
+}
 
-  add_op("ADC", ADC, 0b1111110000000000, 0b0001110000000000, 1);
-  add_op("ADD", ADD, 0b1111110000000000, 0b0000110000000000, 1);
-
-  // etc ...
-
+static bool load_hex_to_flash(const char *filename) {
+  FILE *file = fopen(filename, "r");
+  if (file == NULL) {
+    return false;
+  }
+  int length = 1024;
+  char buffer[length];
+  memset(buffer, 0, length);
+  int memory_index = 0;
+  while (fgets(buffer, length, file)) {
+    char *line = buffer + 1;
+    char number_buffer[2];
+    memset(number_buffer, 0, 2);
+    sscanf(line, "%2s", number_buffer);
+    int data_length = (int)strtol(number_buffer, 0, 16);
+    line += 6;
+    memset(number_buffer, 0, 2);
+    sscanf(line, "%2s", number_buffer);
+    if (strncmp(number_buffer, "01", 2) == 0) {
+      break;
+    } else if (strncmp(number_buffer, "00", 2) != 0) {
+      continue;
+    }
+    line += 2;
+    char *data_buffer = calloc(data_length * 2, sizeof(char));
+    for (int i = 0; i < data_length * 2; i++) {
+      data_buffer[i] = line[i];
+    }
+    for (int i = 0; i < data_length * 2; i += 4) {
+      char low[3], high[3];
+      memset(low, 0, 3);
+      memset(high, 0, 3);
+      sscanf(data_buffer + i, "%2s", low);
+      sscanf(data_buffer + i + 2, "%2s", high);
+      uint16_t word = ((uint16_t)strtol(high, 0, 16) << 8) | (uint16_t)strtol(low, 0, 16);
+      printf("Writing word 0x%.2X to flash memory\n", word);
+      memcpy(mcu.memory + memory_index, &word, sizeof(word));
+      memory_index += sizeof(word);
+    }
+    free(data_buffer);
+    memset(buffer, 0, length);
+  }
+  printf("Done\n");
+  return true;
 }
 
 static uint16_t X_reg_get(void) {
