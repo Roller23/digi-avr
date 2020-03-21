@@ -13,6 +13,7 @@ typedef uint16_t word;
 #define IO_REGISTER_COUNT 64
 #define EXT_IO_REGISTER_COUNT 160
 #define DATA_MEMORY_SIZE 0x0900
+#define MEMORY_SIZE (32 * KB)
 #define RAM_SIZE (2 * KB)
 #define KB 1024
 
@@ -35,7 +36,7 @@ typedef struct {
   SREG_t SREG;
   byte data_memory[DATA_MEMORY_SIZE]; // contains registers and RAM, allows various addressing modes
   byte ROM[KB];
-  byte memory[32 * KB];
+  byte memory[MEMORY_SIZE];
   byte *R; // General purpose registers
   byte *IO; // IO registers
   byte *ext_IO; // External IO registers

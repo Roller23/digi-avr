@@ -38,6 +38,7 @@ void mcu_init(void) {
 static bool load_hex_to_flash(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
+    printf("Could not open %s\n", filename);
     return false;
   }
   int length = 1024;
@@ -70,6 +71,11 @@ static bool load_hex_to_flash(const char *filename) {
       sscanf(data_buffer + i, "%2s", low);
       sscanf(data_buffer + i + 2, "%2s", high);
       uint16_t word = ((uint16_t)strtol(high, 0, 16) << 8) | (uint16_t)strtol(low, 0, 16);
+      if (memory_index >= MEMORY_SIZE) {
+        printf("Cannot fit the whole program in memory\n");
+        free(data_buffer);
+        return false;
+      }
       printf("Writing word 0x%.2X to flash memory\n", word);
       memcpy(mcu.memory + memory_index, &word, sizeof(word));
       memory_index += sizeof(word);
