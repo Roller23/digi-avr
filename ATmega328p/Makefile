@@ -10,9 +10,7 @@ update:
 	git stash apply
 
 push:
-	git stash
-	git pull
-	git stash apply
+	make update
 	git add .
 	git commit -m "Automated makefile commit"
 	git push
