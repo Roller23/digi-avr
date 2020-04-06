@@ -32,6 +32,12 @@ static inline void JMP(uint32_t opcode) {
   mcu.pc = address;
 }
 
+static inline void RCALL(uint32_t opcode) {
+  uint16_t address = opcode & 0xFFF;
+  stack_push(&mcu, mcu.pc + WORD_SIZE);
+  mcu.pc += address + WORD_SIZE;
+}
+
 static Instruction_t opcodes[] = {
   {"ADD",ADD,0b1111110000000000,0b0000110000000000,1},
   {"ADC",ADC,0b1111110000000000,0b0001110000000000,1},
@@ -178,6 +184,17 @@ static bool load_hex_to_flash(const char *filename) {
   }
   printf("Done\n");
   return true;
+}
+
+static void stack_push(ATmega328p_t *mcu, uint16_t value) {
+  mcu->sp -= sizeof(value);
+  mcu->data_memory[mcu->sp] = value;
+}
+
+static uint16_t stack_pop(ATmega328p_t *mcu) {
+  uint16_t value = mcu->data_memory[mcu->sp];
+  mcu->sp += sizeof(value);
+  return value;
 }
 
 static uint16_t X_reg_get(void) {
