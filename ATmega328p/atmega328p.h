@@ -60,8 +60,8 @@ void mcu_init(const char *filename);
 static bool load_hex_to_flash(const char *filename);
 static Instruction_t *find_opcode(uint16_t opcode);
 
-static void stack_push(ATmega328p_t *mcu, uint16_t value);
-static uint16_t stack_pop(ATmega328p_t *mcu);
+static void stack_push(uint16_t value);
+static uint16_t stack_pop(void);
 
 static uint16_t X_reg_get(void);
 static uint16_t Y_reg_get(void);
