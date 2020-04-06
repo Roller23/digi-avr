@@ -10,9 +10,9 @@ static ATmega328p_t mcu;
 
 static inline void ADD(uint32_t opcode) {
   uint8_t reg_d = (opcode & 0xF0) >> 4;
-  reg_d |= b_get(opcode,8) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
   uint8_t reg_r = (opcode & 0xF);
-  reg_r |= b_get(opcode,9) >> 5;
+  reg_r |= b_get(opcode, 9) >> 5;
   uint8_t result = mcu.R[reg_d] + mcu.R[reg_r];
   mcu.SREG.flags.H = !!(b_get(mcu.R[reg_d],3) & b_get(mcu.R[reg_r],3) | b_get(mcu.R[reg_r],3) & ~b_get(result,3) | ~b_get(result,3) & b_get(mcu.R[reg_d],3));
   mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d],7) & b_get(mcu.R[reg_r],7) & ~b_get(result,7) | ~b_get(mcu.R[reg_d],7) & ~b_get(mcu.R[reg_r],7) & b_get(result,7));
@@ -38,21 +38,21 @@ static inline void ADC(uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += WORD_SIZE;
 }
-static inline void ADIW(uint32_t opcode){
+static inline void ADIW(uint32_t opcode) {
+  // 1001 0110 KKdd KKKK
   uint8_t k = (opcode & 0xF);
-  k |= b_get(opcode,6) >> 2;
-  k |= b_get(opcode,7) >> 2;
-  uint8_t reg_d = ((!!b_get(opcode,5)) << 1) | (!!b_get(opcode,4));
+  k |= b_get(opcode, 6) >> 2;
+  k |= b_get(opcode, 7) >> 2;
+  uint8_t reg_d = ((!!b_get(opcode, 5)) << 1) | (!!b_get(opcode, 4));
   reg_d = reg_d * 2 + 24;
-  uint16_t rd = ((uint16_t)mcu.R[reg_d+1] << 8) | mcu.R[reg_d];
+  uint16_t rd = word_reg_get(reg_d);
   uint16_t result = rd + k;
   mcu.SREG.flags.V = !b_get(rd,15) & !!b_get(result,15);
-  mcu.SREG.flags.N = !!b_get(result,15);
+  mcu.SREG.flags.N = !!b_get(result, 15);
   mcu.SREG.flags.Z = (result == 0);
-  mcu.SREG.flags.C = !b_get(result,15) &  !!b_get(rd,15);
+  mcu.SREG.flags.C = !b_get(result,15) & !!b_get(rd,15);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
-  mcu.R[reg_d] = result;
-  mcu.R[reg_d+1] = result >> 8;
+  word_reg_set(reg_d, result);
   mcu.pc += WORD_SIZE;
 }
 
@@ -246,41 +246,39 @@ static uint16_t stack_pop(void) {
   return value;
 }
 
-static uint16_t X_reg_get(void) {
-  uint16_t low = mcu.R[26];
-  uint16_t high = mcu.R[27];
+static uint16_t word_reg_get(uint8_t d) {
+  uint16_t low = mcu.R[d];
+  uint16_t high = mcu.R[d + 1];
   return (high << 8) | low;
+}
+
+static uint16_t word_reg_set(uint8_t d, uint16_t value) {
+  uint16_t low = value & 0x00FF;
+  uint16_t high = (value & 0xFF00) >> 8;
+  mcu.R[d] = low;
+  mcu.R[d + 1] = high;
+}
+
+static uint16_t X_reg_get(void) {
+  return word_reg_get(26);
 }
 
 static uint16_t Y_reg_get(void) {
-  uint16_t low = mcu.R[28];
-  uint16_t high = mcu.R[29];
-  return (high << 8) | low;
+  return word_reg_get(28);
 }
 
 static uint16_t Z_reg_get(void) {
-  uint16_t low = mcu.R[30];
-  uint16_t high = mcu.R[31];
-  return (high << 8) | low;
+  return word_reg_get(30);
 }
 
 static void X_reg_set(uint16_t value) {
-  uint16_t low = value & 0x00FF;
-  uint16_t high = (value & 0xFF00) >> 8;
-  mcu.R[26] = low;
-  mcu.R[27] = high;
+  word_reg_set(26, value);
 }
 
 static void Y_reg_set(uint16_t value) {
-  uint16_t low = value & 0x00FF;
-  uint16_t high = (value & 0xFF00) >> 8;
-  mcu.R[28] = low;
-  mcu.R[29] = high;
+  word_reg_set(28, value);
 }
 
 static void Z_reg_set(uint16_t value) {
-  uint16_t low = value & 0x00FF;
-  uint16_t high = (value & 0xFF00) >> 8;
-  mcu.R[30] = low;
-  mcu.R[31] = high;
+  word_reg_set(30, value);
 }

@@ -63,6 +63,8 @@ static Instruction_t *find_opcode(uint16_t opcode);
 static void stack_push(uint16_t value);
 static uint16_t stack_pop(void);
 
+static uint16_t word_reg_get(uint8_t d);
+static uint16_t word_reg_set(uint8_t d, uint16_t value);
 static uint16_t X_reg_get(void);
 static uint16_t Y_reg_get(void);
 static uint16_t Z_reg_get(void);
