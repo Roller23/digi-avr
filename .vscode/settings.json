@@ -1,5 +1,6 @@
 {
   "files.associations": {
-    "atmega328p.h": "c"
+    "atmega328p.h": "c",
+    "instructions.h": "c"
   }
 }
