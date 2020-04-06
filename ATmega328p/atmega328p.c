@@ -1,8 +1,18 @@
 #include "atmega328p.h"
-#include "instrctions.h"
+#include "instructions.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+static ATmega328p_t mcu;
+
+static inline void ADD(uint32_t opcode) {
+  uint8_t dest_reg = (opcode & 0xF0) >> 4;
+  dest_reg |= (dest_reg & (1LU << 8));
+  uint8_t source_dest = (opcode & 0xF);
+  source_dest |= (source_dest & (1LU << 9));
+  mcu.R[dest_reg] += mcu.R[source_dest];
+}
 
 static Instruction_t opcodes[] = {
   {"ADD",ADD,0b1111110000000000,0b0000110000000000,1},
@@ -77,17 +87,15 @@ static Instruction_t opcodes[] = {
 
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
-static Instruction_t *find_opcode(uint8_t first_byte) {
+static Instruction_t *find_opcode(uint16_t opcode) {
   for (int i = 0; i < opcodes_count; i++) {
-    if ((opcodes[i].mask1 & first_byte) == opcodes[i].mask2) {
+    if ((opcodes[i].mask1 & opcode) == opcodes[i].mask2) {
       return &opcodes[i];
     }
   }
   // opcode not found!
   return NULL;
 }
-
-static ATmega328p_t mcu;
 
 void mcu_init(void) {
   mcu.R = &mcu.data_memory[0];
