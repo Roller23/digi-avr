@@ -29,7 +29,7 @@ static inline void JMP(uint32_t opcode) {
   address |= (opcode & 0xF00000) >> 20;
   address |= (opcode & (1LU << 16));
   address |= (opcode & (1LU << 24));
-  mcu.pc += 2 * WORD_SIZE + address;
+  mcu.pc = address;
 }
 
 static Instruction_t opcodes[] = {
