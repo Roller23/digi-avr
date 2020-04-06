@@ -64,7 +64,7 @@ static inline void RJMP(uint32_t opcode) {
 }
 
 static inline void IJMP(uint32_t opcode) {
-  // Immediate jump to address at Z register
+  // Indirect jump to address at Z register
   mcu.pc = Z_reg_get();
 }
 
