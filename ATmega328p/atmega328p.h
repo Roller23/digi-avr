@@ -55,7 +55,7 @@ typedef struct {
 
 
 // API
-void mcu_init(void);
+void mcu_init(const char *filename);
 
 static bool load_hex_to_flash(const char *filename);
 static Instruction_t *find_opcode(uint16_t opcode);

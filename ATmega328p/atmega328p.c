@@ -98,7 +98,7 @@ static Instruction_t *find_opcode(uint16_t opcode) {
   return NULL;
 }
 
-void mcu_init(void) {
+void mcu_init(const char *filename) {
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
@@ -108,7 +108,7 @@ void mcu_init(void) {
   mcu.SREG.value = 0;
   memset(mcu.data_memory, 0, sizeof(mcu.data_memory));
 
-  load_hex_to_flash("./test.hex");
+  load_hex_to_flash(filename);
 }
 
 static bool load_hex_to_flash(const char *filename) {
