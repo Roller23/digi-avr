@@ -126,11 +126,11 @@ void mcu_init(const char *filename) {
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
   mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
-  mcu.sp = sizeof(mcu.data_memory);
+  mcu.sp = &mcu.RAM[RAM_SIZE];
   mcu.pc = 0;
   mcu.SREG.value = 0;
-  memset(mcu.data_memory, 0, sizeof(mcu.data_memory));
-
+  memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
+  memset(mcu.memory, 0, MEMORY_SIZE);
   load_hex_to_flash(filename);
 }
 
@@ -188,11 +188,11 @@ static bool load_hex_to_flash(const char *filename) {
 
 static void stack_push(ATmega328p_t *mcu, uint16_t value) {
   mcu->sp -= sizeof(value);
-  mcu->data_memory[mcu->sp] = value;
+  mcu->RAM[mcu->sp] = value;
 }
 
 static uint16_t stack_pop(ATmega328p_t *mcu) {
-  uint16_t value = mcu->data_memory[mcu->sp];
+  uint16_t value = mcu->RAM[mcu->sp];
   mcu->sp += sizeof(value);
   return value;
 }
