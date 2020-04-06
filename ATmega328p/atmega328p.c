@@ -9,11 +9,50 @@
 static ATmega328p_t mcu;
 
 static inline void ADD(uint32_t opcode) {
-  uint8_t dest_reg = (opcode & 0xF0) >> 4;
-  dest_reg |= b_get(opcode, 8);
-  uint8_t source_dest = (opcode & 0xF);
-  source_dest |= b_get(opcode, 9);
-  mcu.R[dest_reg] += mcu.R[source_dest];
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode,8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode,9) >> 5;
+  uint8_t result = mcu.R[reg_d] + mcu.R[reg_r];
+  mcu.SREG.flags.H = !!(b_get(mcu.R[reg_d],3) & b_get(mcu.R[reg_r],3) | b_get(mcu.R[reg_r],3) & ~b_get(result,3) | ~b_get(result,3) & b_get(mcu.R[reg_d],3));
+  mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d],7) & b_get(mcu.R[reg_r],7) & ~b_get(result,7) | ~b_get(mcu.R[reg_d],7) & ~b_get(mcu.R[reg_r],7) & b_get(result,7));
+  mcu.SREG.flags.N = !!b_get(result,7);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = !!(b_get(mcu.R[reg_d],7) & b_get(mcu.R[reg_r],7) | b_get(mcu.R[reg_r],7) & ~b_get(result,7) | ~b_get(result,7) & b_get(mcu.R[reg_d],7));
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void ADC(uint32_t opcode){
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode,8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode,9) >> 5;
+  uint8_t result = mcu.R[reg_d] + mcu.R[reg_r] + mcu.SREG.flags.C;
+  mcu.SREG.flags.H = !!(b_get(mcu.R[reg_d],3) & b_get(mcu.R[reg_r],3) | b_get(mcu.R[reg_r],3) & ~b_get(result,3) | ~b_get(result,3) & b_get(mcu.R[reg_d],3));
+  mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d],7) & b_get(mcu.R[reg_r],7) & ~b_get(result,7) | ~b_get(mcu.R[reg_d],7) & ~b_get(mcu.R[reg_r],7) & b_get(result,7));
+  mcu.SREG.flags.N = !!b_get(result,7);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = !!(b_get(mcu.R[reg_d],7) & b_get(mcu.R[reg_r],7) | b_get(mcu.R[reg_r],7) & ~b_get(result,7) | ~b_get(result,7) & b_get(mcu.R[reg_d],7));
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void ADIW(uint32_t opcode){
+  uint8_t k = (opcode & 0xF);
+  k |= b_get(opcode,6) >> 2;
+  k |= b_get(opcode,7) >> 2;
+  uint8_t reg_d = ((!!b_get(opcode,5)) << 1) | (!!b_get(opcode,4));
+  reg_d = reg_d * 2 + 24;
+  uint16_t rd = ((uint16_t)mcu.R[reg_d+1] << 8) | mcu.R[reg_d];
+  uint16_t result = rd + k;
+  mcu.SREG.flags.V = !b_get(rd,15) & !!b_get(result,15);
+  mcu.SREG.flags.N = !!b_get(result,15);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = !b_get(result,15) &  !!b_get(rd,15);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.R[reg_d+1] = result >> 8;
   mcu.pc += WORD_SIZE;
 }
 
