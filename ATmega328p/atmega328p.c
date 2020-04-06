@@ -57,26 +57,34 @@ static inline void ADIW(uint32_t opcode){
 }
 
 static inline void RJMP(uint32_t opcode) {
-  uint16_t address = opcode & 0x0FFF;
-  mcu.pc += address + WORD_SIZE;
+  // 1100 kkkk kkkk kkkk
+  // Relative jump to PC + k + 1
+  uint16_t k = opcode & 0x0FFF;
+  mcu.pc += k + WORD_SIZE;
 }
 
 static inline void IJMP(uint32_t opcode) {
+  // Immediate jump to address at Z register
   mcu.pc = Z_reg_get();
 }
 
 static inline void JMP(uint32_t opcode) {
-  uint32_t address = opcode & 0xFFFF;
-  address |= (opcode & 0xF00000) >> 20;
-  address |= b_get(opcode, 16);
-  address |= b_get(opcode, 24);
-  mcu.pc = address;
+  // 1001 010k kkkk 110k
+  // kkkk kkkk kkkk kkkk
+  // Jump to address k, PC = k
+  uint32_t k = opcode & 0xFFFF;
+  k |= b_get(opcode, 16);
+  k |= (opcode & 0xF00000) >> 3;
+  k |= b_get(opcode, 24) >> 3;
+  mcu.pc = k;
 }
 
 static inline void RCALL(uint32_t opcode) {
-  uint16_t address = opcode & 0xFFF;
+  // 1101 kkkk kkkk kkkk
+  // Jump to address + 1 + PC, push current PC + 1 onto stack (relative call)
+  uint16_t k = opcode & 0xFFF;
   stack_push(mcu.pc + WORD_SIZE);
-  mcu.pc += address + WORD_SIZE;
+  mcu.pc += k + WORD_SIZE;
 }
 
 static Instruction_t opcodes[] = {
