@@ -8,11 +8,28 @@ static ATmega328p_t mcu;
 
 static inline void ADD(uint32_t opcode) {
   uint8_t dest_reg = (opcode & 0xF0) >> 4;
-  dest_reg |= (dest_reg & (1LU << 8));
+  dest_reg |= (opcode & (1LU << 8));
   uint8_t source_dest = (opcode & 0xF);
-  source_dest |= (source_dest & (1LU << 9));
+  source_dest |= (opcode & (1LU << 9));
   mcu.R[dest_reg] += mcu.R[source_dest];
   mcu.pc += WORD_SIZE;
+}
+
+static inline void RJMP(uint32_t opcode) {
+  uint16_t address = opcode & 0x0FFF;
+  mcu.pc += address + WORD_SIZE;
+}
+
+static inline void IJMP(uint32_t opcode) {
+  mcu.pc = Z_reg_get();
+}
+
+static inline void JMP(uint32_t opcode) {
+  uint32_t address = opcode & 0xFFFF;
+  address |= (opcode & 0xF00000) >> 20;
+  address |= (opcode & (1LU << 16));
+  address |= (opcode & (1LU << 24));
+  mcu.pc += 2 * WORD_SIZE + address;
 }
 
 static Instruction_t opcodes[] = {
