@@ -249,6 +249,13 @@ static inline void BRBC(uint32_t opcode) {
   mcu.pc += WORD_SIZE;
 }
 
+static inline void XXX(uint32_t opcode) {
+  // 1111 1111 1111 1111
+  // Unknown opcode
+  printf("Unknown opcode! 0x%.4X\n", opcode);
+  mcu.pc += WORD_SIZE;
+}
+
 static Instruction_t opcodes[] = {
   {"ADD", ADD, 0b1111110000000000, 0b0000110000000000, 1},
   {"ADC", ADC, 0b1111110000000000, 0b0001110000000000, 1},
@@ -317,7 +324,9 @@ static Instruction_t opcodes[] = {
   {"NOP", NOP, 0b1111111111111111, 0b0000000000000000, 1},
   {"SLEEP", SLEEP, 0b1111111111111111, 0b1001010110001000, 1},
   {"WDR", WDR, 0b1111111111111111, 0b1001010110101000, 1},
-  {"BREAK", BREAK, 0b1111111111111111, 0b1001010110011000, 0} //???
+  {"BREAK", BREAK, 0b1111111111111111, 0b1001010110011000, 0}, //???
+
+  {"XXX", XXX, 0b1111111111111111, 0b1111111111111111, 1}
 };
 
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
@@ -329,7 +338,7 @@ static Instruction_t *find_instruction(uint16_t opcode) {
     }
   }
   // opcode not found!
-  return NULL;
+  return &opcodes[opcodes_count - 1]; // XXX
 }
 
 static uint16_t get_opcode(void) {
@@ -360,12 +369,6 @@ void mcu_start(void) {
     // TO DO: check if it's a multi opcode instruction
     Instruction_t *instruction = find_instruction(opcode);
     // TO DO: simulate multi cycle instructions
-    if (instruction == NULL) {
-      printf("Unknown instruction! 0x%.4X\n", opcode);
-      mcu.pc += WORD_SIZE;
-      usleep(CLOCK_FREQ);
-      continue;
-    }
     if (mcu.skip_next) {
       // TO DO: check if the next instruction is 16 or 32 bits
       printf("Skipping %s\n", instruction->name);
