@@ -11,6 +11,7 @@
 #define SEC (MS * 1000)
 #define CLOCK_FREQ (SEC / 1)
 
+static Instruction_t *opcode_lookup[0xFFFF];
 static ATmega328p_t mcu;
 
 static inline void ADD(uint32_t opcode) {
@@ -472,6 +473,11 @@ static inline void BRBC(uint32_t opcode) {
   mcu.pc += WORD_SIZE;
 }
 
+static inline void NOP(uint32_t opcode) {
+  // No operation
+  mcu.pc += WORD_SIZE;
+}
+
 static inline void XXX(uint32_t opcode) {
   // 1111 1111 1111 1111
   // Unknown opcode
@@ -572,6 +578,15 @@ static uint16_t get_opcode(void) {
   return (mcu.memory[mcu.pc + 1] << 8) | mcu.memory[mcu.pc];
 }
 
+static void create_lookup_table(void) {
+  for (uint64_t i = 0; i < MEMORY_SIZE;) {
+    uint16_t opcode = (mcu.memory[i + 1] << 8) | mcu.memory[i];
+    Instruction_t *instruction = find_instruction(opcode);
+    opcode_lookup[opcode] = instruction;
+    i += WORD_SIZE;
+  }
+}
+
 void mcu_init(const char *filename) {
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
@@ -581,16 +596,18 @@ void mcu_init(const char *filename) {
   mcu.pc = 0;
   mcu.SREG.value = 0;
   mcu.skip_next = false;
+  memset(opcode_lookup, 0, sizeof(opcode_lookup));
   memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
   memset(mcu.memory, 0, MEMORY_SIZE);
   load_hex_to_flash(filename);
+  create_lookup_table();
 }
 
 void mcu_start(void) {
   while (true) {
     uint16_t opcode = get_opcode();
     // TO DO: check if it's a multi opcode instruction
-    Instruction_t *instruction = find_instruction(opcode);
+    Instruction_t *instruction = opcode_lookup[opcode];
     // TO DO: simulate multi cycle instructions
     if (mcu.skip_next) {
       // TO DO: check if the next instruction is 16 or 32 bits

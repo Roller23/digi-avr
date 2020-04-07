@@ -60,6 +60,7 @@ void mcu_init(const char *filename);
 void mcu_start(void);
 
 static bool load_hex_to_flash(const char *filename);
+static void create_lookup_table(void);
 static Instruction_t *find_instruction(uint16_t opcode);
 static uint16_t get_opcode(void);
 
