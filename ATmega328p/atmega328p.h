@@ -43,6 +43,7 @@ typedef struct {
   byte *RAM;
   uint16_t sp; // Stack pointer, 2 bytes needed to address the 2KB RAM space
   uint16_t pc; // Program counter
+  uint16_t mp; // Memory pointer
   bool skip_next;
 } ATmega328p_t;
 
@@ -57,9 +58,11 @@ typedef struct {
 
 // API
 void mcu_init(const char *filename);
+void mcu_start(void);
 
 static bool load_hex_to_flash(const char *filename);
-static Instruction_t *find_opcode(uint16_t opcode);
+static Instruction_t *find_instruction(uint16_t opcode);
+static uint16_t get_opcode(void);
 
 static void stack_push(uint16_t value);
 static uint16_t stack_pop(void);

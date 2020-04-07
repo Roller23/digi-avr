@@ -4,8 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
 
 #define b_get(number, n) (number & (1LU << n))
+#define MS 1000
+#define SEC (MS * 1000)
+#define CLOCK_FREQ (SEC / 1)
 
 static ATmega328p_t mcu;
 
@@ -324,7 +328,7 @@ static Instruction_t opcodes[] = {
 
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
-static Instruction_t *find_opcode(uint16_t opcode) {
+static Instruction_t *find_instruction(uint16_t opcode) {
   for (int i = 0; i < opcodes_count; i++) {
     if ((opcodes[i].mask1 & opcode) == opcodes[i].mask2) {
       return &opcodes[i];
@@ -334,6 +338,12 @@ static Instruction_t *find_opcode(uint16_t opcode) {
   return NULL;
 }
 
+static uint16_t get_opcode(void) {
+  uint16_t opcode = (mcu.memory[mcu.mp] << WORD_SIZE * 2) | mcu.memory[mcu.mp + 1];
+  mcu.mp += WORD_SIZE;
+  return opcode;
+}
+
 void mcu_init(const char *filename) {
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
@@ -341,11 +351,30 @@ void mcu_init(const char *filename) {
   mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
   mcu.sp = RAM_SIZE;
   mcu.pc = 0;
+  mcu.mp = 0;
   mcu.SREG.value = 0;
   mcu.skip_next = false;
   memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
   memset(mcu.memory, 0, MEMORY_SIZE);
   load_hex_to_flash(filename);
+}
+
+void mcu_start(void) {
+  while (true) {
+    uint16_t opcode = get_opcode();
+    // TO DO: check if it's a multi opcode instruction
+    Instruction_t *instruction = find_instruction(opcode);
+    // TO DO: simulate multi cycle instructions
+    if (mcu.skip_next) {
+      // TO DO: check if the next instruction is 16 or 32 bits
+      mcu.pc += WORD_SIZE;
+      mcu.skip_next = false;
+      continue;
+    }
+    printf("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
+    instruction->function(opcode);
+    usleep(CLOCK_FREQ);
+  }
 }
 
 static bool load_hex_to_flash(const char *filename) {
