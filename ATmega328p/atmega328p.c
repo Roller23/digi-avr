@@ -581,9 +581,8 @@ static uint16_t get_opcode(void) {
 static void create_lookup_table(void) {
   for (uint64_t i = 0; i < MEMORY_SIZE;) {
     uint16_t opcode = (mcu.memory[i + 1] << 8) | mcu.memory[i];
-    Instruction_t *instruction = find_instruction(opcode);
-    opcode_lookup[opcode] = instruction;
-    i += WORD_SIZE;
+    opcode_lookup[opcode] = find_instruction(opcode);
+    i += WORD_SIZE * opcode_lookup[opcode]->length;
   }
 }
 
