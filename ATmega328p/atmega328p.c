@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define b_get(number, n) (number & (1LU << n))
 
@@ -86,6 +87,168 @@ static inline void RCALL(uint32_t opcode) {
   uint16_t k = opcode & 0xFFF;
   stack_push(mcu.pc + WORD_SIZE);
   mcu.pc += k + WORD_SIZE;
+}
+
+static inline void ICALL(uint32_t opcode) {
+  // Indirect call, PC = Z, push PC + 1 to stack
+  stack_push(mcu.pc + WORD_SIZE);
+  mcu.pc = Z_reg_get();
+}
+
+static inline void CALL(uint32_t opcode) {
+  // 1001 010k kkkk 111k
+  // kkkk kkkk kkkk kkkk
+  // Long call, push PC + 2 to stack, PC = k
+  uint32_t k = opcode & 0xFFFF;
+  k |= b_get(opcode, 16);
+  k |= (0xF00000) >> 3;
+  k |= b_get(opcode, 24) >> 3;
+  stack_push(mcu.pc + 2 * WORD_SIZE);
+  mcu.pc = k;
+}
+
+static inline void RET(uint32_t opcode) {
+  // Return from subroutine, PC = stack
+  mcu.pc = stack_pop();
+}
+
+static inline void RETI(uint32_t opcode) {
+  // Return from interrupt and set I to 1
+  mcu.pc = stack_pop();
+  mcu.SREG.flags.I = 1;
+}
+
+static inline void CPSE(uint32_t opcode) {
+  // 0001 00rd dddd rrrr
+  // Compare, skip if equal
+  uint16_t r = opcode & 0xF;
+  r |= b_get(opcode, 9) >> 5;
+  uint16_t d = (opcode & 0xF0) >> 4;
+  d |= b_get(opcode, 8) >> 4;
+  if (r == d) {
+    mcu.skip_next = true;
+  }
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void CP(uint32_t opcode) {
+  // 0001 01rd dddd rrrr
+  // Compare two registers
+  uint16_t r = opcode & 0xF;
+  r |= b_get(opcode, 9) >> 5;
+  uint16_t d = (opcode & 0xF0) >> 4;
+  d |= b_get(opcode, 8) >> 4;
+  byte *R = mcu.R;
+  uint8_t res = R[d] - R[r];
+  mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(R[r], 3) || b_get(R[r], 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
+  mcu.SREG.flags.V = b_get(R[d], 7) && !b_get(R[r], 7) && b_get(res, 7) || !b_get(R[d], 7) && b_get(R[r], 7) && b_get(res, 7);
+  mcu.SREG.flags.N = (res < 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.SREG.flags.Z = (res == 0);
+  mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(R[r], 7) || b_get(R[r], 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void CPC(uint32_t opcode) {
+  // 0000 01rd dddd rrrr
+  // Compare with carry
+  uint16_t r = opcode & 0xF;
+  r |= b_get(opcode, 9) >> 5;
+  uint16_t d = (opcode & 0xF0) >> 4;
+  d |= b_get(opcode, 8) >> 4;
+  byte *R = mcu.R;
+  uint8_t res = R[d] - R[r] - mcu.SREG.flags.C;
+  mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(R[r], 3) || b_get(R[r], 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
+  mcu.SREG.flags.V = b_get(R[d], 7) && !b_get(R[r], 7) && b_get(res, 7) || !b_get(R[d], 7) && b_get(R[r], 7) && b_get(res, 7);
+  mcu.SREG.flags.N = (res < 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(R[r], 7) || b_get(R[r], 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
+  mcu.SREG.flags.Z = (res == 0) && mcu.SREG.flags.Z;
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void CPI(uint32_t opcode) {
+  // 0011 KKKK dddd KKKK
+  // Compare with immediate
+  uint16_t k = (opcode & 0xF) | ((opcode & 0xF00) >> 4);
+  uint16_t d = (opcode & 0xF0) >> 4;
+  byte *R = mcu.R;
+  uint8_t res = R[d] - k;
+  mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(k, 3) || b_get(k, 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
+  mcu.SREG.flags.V = b_get(R[d], 7) && !b_get(k, 7) && !b_get(res, 7) || !b_get(R[d], 7) && b_get(k, 7) && b_get(res, 7);
+  mcu.SREG.flags.N = (res < 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.SREG.flags.Z = (res == 0);
+  mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(k, 7) || b_get(k, 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void SBRC(uint32_t opcode) {
+  // 1111 110r rrrr 0bbb
+  // Skip if R[r](b) is cleared
+  uint8_t b = (opcode & 0xF) & ~(1LU << 3);
+  uint16_t r = ((opcode & 0xF0) | b_get(opcode, 8)) >> 4;
+  if (!b_get(mcu.R[r], b)) {
+    mcu.skip_next = true;
+  }
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void SBRS(uint32_t opcode) {
+  // 1111 111r rrrr 0bbb
+  // Skip if R[r](b) is set
+  uint8_t b = (opcode & 0xF) & ~(1LU << 3);
+  uint8_t r = ((opcode & 0xF0) | b_get(opcode, 8)) >> 4;
+  if (b_get(mcu.R[r], b)) {
+    mcu.skip_next = true;
+  }
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void SBIC(uint32_t opcode) {
+  // 1001 1001 AAAA Abbb
+  // Skip if I/O[A](b) is cleared
+  uint16_t b = (opcode & 0xF) & ~(1LU << 3);
+  uint16_t A = ((opcode & (1LU << 3)) | (opcode & 0xF0)) >> 3;
+  if (!b_get(mcu.IO[A], b)) {
+    mcu.skip_next = true;
+  }
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void SBIS(uint32_t opcode) {
+  // 1001 1011 AAAA Abbb
+  // Skip if I/O[A](b) is set
+  uint16_t b = (opcode & 0b111);
+  uint16_t A = ((opcode & (1LU << 3)) | (opcode & 0xF0)) >> 3;
+  if (b_get(mcu.IO[A], b)) {
+    mcu.skip_next = true;
+  }
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BRBS(uint32_t opcode) {
+  // 1111 00kk kkkk ksss
+  // Branch if SREG(s) is set (PC += k + 1), k is in U2
+  uint8_t s = opcode & 0b111;
+  int16_t k = -64 * !!b_get(opcode, 9) + ((opcode & 0b111111000) >> 3);
+  if (b_get(mcu.SREG.value, s)) {
+    mcu.pc += k + WORD_SIZE;
+    return;
+  }
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BRBC(uint32_t opcode) {
+  //1111 01kk kkkk ksss
+  // Branch if SREG(s) is cleared (PC += k + 1), k is in U2
+  uint8_t s = opcode & 0b111;
+  int16_t k = -64 * !!b_get(opcode, 9) + ((opcode & 0b111111000) >> 3);
+  if (!b_get(mcu.SREG.value, s)) {
+    mcu.pc += k + WORD_SIZE;
+    return;
+  }
+  mcu.pc += WORD_SIZE;
 }
 
 static Instruction_t opcodes[] = {
@@ -176,9 +339,10 @@ void mcu_init(const char *filename) {
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
   mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
-  mcu.sp = &mcu.RAM[RAM_SIZE];
+  mcu.sp = RAM_SIZE;
   mcu.pc = 0;
   mcu.SREG.value = 0;
+  mcu.skip_next = false;
   memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
   memset(mcu.memory, 0, MEMORY_SIZE);
   load_hex_to_flash(filename);
