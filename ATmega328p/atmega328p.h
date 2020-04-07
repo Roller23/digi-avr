@@ -43,7 +43,6 @@ typedef struct {
   byte *RAM;
   uint16_t sp; // Stack pointer, 2 bytes needed to address the 2KB RAM space
   uint16_t pc; // Program counter
-  uint16_t mp; // Memory pointer
   bool skip_next;
 } ATmega328p_t;
 
