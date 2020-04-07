@@ -14,6 +14,7 @@
 static ATmega328p_t mcu;
 
 static inline void ADD(uint32_t opcode) {
+  // 0000 11rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= b_get(opcode, 8) >> 4;
   uint8_t reg_r = (opcode & 0xF);
@@ -30,6 +31,7 @@ static inline void ADD(uint32_t opcode) {
 }
 
 static inline void ADC(uint32_t opcode) {
+  // 0001 11rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= b_get(opcode, 8) >> 4;
   uint8_t reg_r = (opcode & 0xF);
@@ -61,6 +63,225 @@ static inline void ADIW(uint32_t opcode) {
   word_reg_set(reg_d, result);
   mcu.pc += WORD_SIZE;
 }
+static inline void SUB(uint32_t opcode){
+  // 0001 10rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  uint8_t result = mcu.R[reg_d] - mcu.R[reg_r];
+  mcu.SREG.flags.H = !!(~b_get(mcu.R[reg_d], 3) & b_get(mcu.R[reg_r], 3) | b_get(mcu.R[reg_r], 3) & b_get(result, 3) | b_get(result, 3) & ~b_get(mcu.R[reg_d], 3));
+  mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d], 7) & ~b_get(mcu.R[reg_r], 7) & ~b_get(result, 7) | ~b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) & b_get(result, 7));
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) | b_get(mcu.R[reg_r], 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void SUBI(uint32_t opcode){
+  // 0101 kkkk dddd kkkk
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  uint8_t k = (opcode & 0xF) | ((opcode & 0xF00) >> 4);
+  uint8_t result = mcu.R[reg_d] - k;
+  mcu.SREG.flags.H = !!(~b_get(mcu.R[reg_d], 3) & b_get(k, 3) | b_get(k, 3) & b_get(result, 3) | b_get(result, 3) & ~b_get(mcu.R[reg_d], 3));
+  mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d], 7) & ~b_get(k, 7) & ~b_get(result, 7) | ~b_get(mcu.R[reg_d], 7) & b_get(k, 7) & b_get(result, 7));
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(k, 7) | b_get(k, 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void SBC(uint32_t opcode){
+  // 0000 10rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  uint8_t result = mcu.R[reg_d] - mcu.R[reg_r] - mcu.SREG.flags.C;
+  mcu.SREG.flags.H = !!(~b_get(mcu.R[reg_d], 3) & b_get(mcu.R[reg_r], 3) | b_get(mcu.R[reg_r], 3) & b_get(result, 3) | b_get(result, 3) & ~b_get(mcu.R[reg_d], 3));
+  mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d], 7) & ~b_get(mcu.R[reg_r], 7) & ~b_get(result, 7) | ~b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) & b_get(result, 7));
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0) & mcu.SREG.flags.Z;
+  mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) | b_get(mcu.R[reg_r], 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void SBCI(uint32_t opcode){
+  // 0100 kkkk dddd kkkk
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  uint8_t k = (opcode & 0xF) | ((opcode & 0xF00) >> 4);
+  uint8_t result = mcu.R[reg_d] - k - mcu.SREG.flags.C;
+  mcu.SREG.flags.H = !!(~b_get(mcu.R[reg_d], 3) & b_get(k, 3) | b_get(k, 3) & b_get(result, 3) | b_get(result, 3) & ~b_get(mcu.R[reg_d], 3));
+  mcu.SREG.flags.V = !!(b_get(mcu.R[reg_d], 7) & ~b_get(k, 7) & ~b_get(result, 7) | ~b_get(mcu.R[reg_d], 7) & b_get(k, 7) & b_get(result, 7));
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0) & mcu.SREG.flags.Z;
+  mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(k, 7) | b_get(k, 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void SBIW(uint32_t opcode){
+  // 1001 0111 KKdd KKKK
+  uint8_t k = (opcode & 0xF);
+  k |= b_get(opcode, 6) >> 2;
+  k |= b_get(opcode, 7) >> 2;
+  uint8_t reg_d = ((!!b_get(opcode, 5)) << 1) | (!!b_get(opcode, 4));
+  reg_d = reg_d * 2 + 24;
+  uint16_t rd = word_reg_get(reg_d);
+  uint16_t result = rd - k;
+  mcu.SREG.flags.V = !!b_get(result, 15) & !b_get(rd, 15);
+  mcu.SREG.flags.N = !!b_get(result, 15);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = !!b_get(result, 15) & !b_get(rd, 15);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  word_reg_set(reg_d, result);
+  mcu.pc += WORD_SIZE;
+}
+static inline void AND(uint32_t opcode){
+  // 0010 00rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  uint8_t result = mcu.R[reg_d] & mcu.R[reg_r];
+  mcu.SREG.flags.V = 0;
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void ANDI(uint32_t opcode){
+  // 0111 KKKK dddd KKKK
+  uint8_t k = (opcode & 0xF);
+  k |= (opcode & 0xF00) >> 4;
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  uint16_t result = mcu.R[reg_d] & k;
+  mcu.SREG.flags.V = 0;
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void OR(uint32_t opcode){
+  // 0010 10rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  uint8_t result = mcu.R[reg_d] | mcu.R[reg_r];
+  mcu.SREG.flags.V = 0;
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void ORI(uint32_t opcode){
+  // 0110 KKKK dddd KKKK
+  uint8_t k = (opcode & 0xF);
+  k |= (opcode & 0xF00) >> 4;
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  uint16_t result = mcu.R[reg_d] | k;
+  mcu.SREG.flags.V = 0;
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void EOR(uint32_t opcode){
+  // 0010 01rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  uint8_t result = mcu.R[reg_d] ^ mcu.R[reg_r];
+  mcu.SREG.flags.V = 0;
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void COM(uint32_t opcode){
+  // 1001 010d dddd 0000
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t result = 0xFF - mcu.R[reg_d];
+  mcu.SREG.flags.V = 0;
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = 1;
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void NEG(uint32_t opcode){
+  // 1001 010d dddd 0001
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t result = 0x00 - mcu.R[reg_d];
+  mcu.SREG.flags.H = !!b_get(result, 3) | !b_get(mcu.R[reg_d], 3); //TD: check H
+  mcu.SREG.flags.V = !!b_get(result, 7) & ((result & 0b01111111) == 0);
+  mcu.SREG.flags.N = !!b_get(result, 7);
+  mcu.SREG.flags.Z = (result == 0);
+  mcu.SREG.flags.C = (result != 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.R[reg_d] = result;
+  mcu.pc += WORD_SIZE;
+}
+static inline void INC(uint32_t opcode){
+  // 1001 010d dddd 0011
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  mcu.R[reg_d] = mcu.R[reg_d] + 1;
+  mcu.SREG.flags.V = !!b_get(mcu.R[reg_d], 7) & ((mcu.R[reg_d] & 0b01111111) == 0);
+  mcu.SREG.flags.N = !!b_get(mcu.R[reg_d], 7);
+  mcu.SREG.flags.Z = (mcu.R[reg_d] == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.pc += WORD_SIZE;
+}
+static inline void DEC(uint32_t opcode){
+  // 1001 010d dddd 1010
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  mcu.R[reg_d] = mcu.R[reg_d] - 1;
+  mcu.SREG.flags.V = !b_get(mcu.R[reg_d], 7) & ((mcu.R[reg_d] & 0b01111111) == 0b01111111);
+  mcu.SREG.flags.N = !!b_get(mcu.R[reg_d], 7);
+  mcu.SREG.flags.Z = (mcu.R[reg_d] == 0);
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.pc += WORD_SIZE;
+}
+static inline void SER(uint32_t opcode){
+  // 1110 1111 dddd 1111
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  mcu.R[reg_d] = 0xFF;
+  mcu.pc += WORD_SIZE;
+}
+static inline void MUL(uint32_t opcode){
+  // 1001 11rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  uint16_t result = mcu.R[reg_d] * mcu.R[reg_r];
+  mcu.SREG.flags.C = !!b_get(result, 15);
+  mcu.SREG.flags.Z = (result == 0);
+  word_reg_set(0, result);
+  mcu.pc += WORD_SIZE;
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 static inline void RJMP(uint32_t opcode) {
   // 1100 kkkk kkkk kkkk
