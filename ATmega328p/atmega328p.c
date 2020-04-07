@@ -283,6 +283,8 @@ static inline void MUL(uint32_t opcode){
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+// this is my turf
+
 static inline void RJMP(uint32_t opcode) {
   // 1100 kkkk kkkk kkkk
   // Relative jump to PC + k + 1
