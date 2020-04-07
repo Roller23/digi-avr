@@ -52,6 +52,7 @@ typedef struct {
   uint16_t mask1; // 1 for all fixed bits, 0 for variables
   uint16_t mask2; // 1 for all fixed 1s, 0 for all fixed 0s and variables
   uint8_t cycles;
+  uint8_t length; // in WORDs
 } Instruction_t;
 
 
