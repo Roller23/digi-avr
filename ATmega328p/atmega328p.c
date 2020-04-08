@@ -11,7 +11,6 @@
 #define SEC (MS * 1000)
 #define CLOCK_FREQ (SEC / 1)
 
-static Instruction_t *opcode_lookup[0xFFFF];
 static ATmega328p_t mcu;
 
 static inline void ADD(uint32_t opcode) {
@@ -581,12 +580,14 @@ static uint16_t get_opcode(void) {
 static void create_lookup_table(void) {
   for (uint64_t i = 0; i < MEMORY_SIZE;) {
     uint16_t opcode = (mcu.memory[i + 1] << 8) | mcu.memory[i];
-    opcode_lookup[opcode] = find_instruction(opcode);
-    i += WORD_SIZE * opcode_lookup[opcode]->length;
+    if (mcu.opcode_lookup[opcode] == NULL) {
+      mcu.opcode_lookup[opcode] = find_instruction(opcode);  
+    }
+    i += WORD_SIZE * mcu.opcode_lookup[opcode]->length;
   }
 }
 
-void mcu_init(const char *filename) {
+bool mcu_init(const char *filename) {
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
@@ -595,10 +596,12 @@ void mcu_init(const char *filename) {
   mcu.pc = 0;
   mcu.SREG.value = 0;
   mcu.skip_next = false;
-  memset(opcode_lookup, 0, sizeof(opcode_lookup));
+  memset(mcu.opcode_lookup, 0, LOOKUP_SIZE);
   memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
   memset(mcu.memory, 0, MEMORY_SIZE);
-  load_hex_to_flash(filename);
+  if (!load_hex_to_flash(filename)) {
+    return false;
+  }
   create_lookup_table();
 }
 
@@ -606,29 +609,16 @@ void mcu_start(void) {
   while (true) {
     uint16_t opcode = get_opcode();
     // TO DO: check if it's a multi opcode instruction
-    Instruction_t *instruction = opcode_lookup[opcode];
+    Instruction_t *instruction = mcu.opcode_lookup[opcode];
     if (mcu.skip_next) {
-      // TO DO: check if the next instruction is 16 or 32 bits
-      printf("Skipping %s\n", instruction->name);
-      mcu.pc += WORD_SIZE;
-      uint16_t next_opcode = get_opcode();
-      Instruction_t *next_instruction = opcode_lookup[next_opcode];
-      if (next_instruction->length == 2) {
-        // Handle 32 bit instructions
-        mcu.pc += WORD_SIZE;
-      }
+      mcu.pc += WORD_SIZE * instruction->length;
       mcu.skip_next = false;
-      usleep(CLOCK_FREQ);
       continue;
     }
     printf("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
     instruction->function(opcode);
-    usleep(CLOCK_FREQ);
-    if (instruction->cycles > 1) {
-      // simulate multi cycles
-      for (int i = 1; i < instruction->cycles; i++) {
-        usleep(CLOCK_FREQ);
-      }
+    for (int i = 0; i < instruction->cycles; i++) {
+      usleep(CLOCK_FREQ);
     }
   }
 }

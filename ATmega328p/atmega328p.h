@@ -16,6 +16,7 @@ typedef uint16_t word;
 #define MEMORY_SIZE (32 * KB)
 #define RAM_SIZE (2 * KB)
 #define KB 1024
+#define LOOKUP_SIZE 0xFFFF
 
 typedef union {
   // Status register flags
@@ -33,6 +34,15 @@ typedef union {
 } SREG_t;
 
 typedef struct {
+  char *name;
+  void (*function)(uint32_t opcode);
+  uint16_t mask1; // 1 for all fixed bits, 0 for variables
+  uint16_t mask2; // 1 for all fixed 1s, 0 for all fixed 0s and variables
+  uint8_t cycles;
+  uint8_t length; // in WORDs
+} Instruction_t;
+
+typedef struct {
   SREG_t SREG;
   byte data_memory[DATA_MEMORY_SIZE]; // contains registers and RAM, allows various addressing modes
   byte ROM[KB];
@@ -44,20 +54,12 @@ typedef struct {
   uint16_t sp; // Stack pointer, 2 bytes needed to address the 2KB RAM space
   uint16_t pc; // Program counter
   bool skip_next;
+  Instruction_t *opcode_lookup[LOOKUP_SIZE];
 } ATmega328p_t;
-
-typedef struct {
-  char *name;
-  void (*function)(uint32_t opcode);
-  uint16_t mask1; // 1 for all fixed bits, 0 for variables
-  uint16_t mask2; // 1 for all fixed 1s, 0 for all fixed 0s and variables
-  uint8_t cycles;
-  uint8_t length; // in WORDs
-} Instruction_t;
 
 
 // API
-void mcu_init(const char *filename);
+bool mcu_init(const char *filename);
 void mcu_start(void);
 
 static bool load_hex_to_flash(const char *filename);
