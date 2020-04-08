@@ -33,6 +33,22 @@ typedef union {
   byte value;
 } SREG_t;
 
+typedef union {
+  // MCU status register flags
+  struct {
+    bit reserved4 : 1;
+    bit reserved3 : 1;
+    bit reserved2 : 1;
+    bit reserved1 : 1;
+    // reset flags
+    bit WDRF : 1; // Watchdog
+    bit BORF : 1; // Brown-out
+    bit EXTRF : 1; // External
+    bit PORF : 1; // Power-on
+  } flags;
+  byte value;
+} MCUSR_t;
+
 typedef struct {
   char *name;
   void (*function)(uint32_t opcode);
@@ -44,6 +60,7 @@ typedef struct {
 
 typedef struct {
   SREG_t SREG;
+  MCUSR_t SR; // MCU status register
   byte data_memory[DATA_MEMORY_SIZE]; // contains registers and RAM, allows various addressing modes
   byte ROM[KB];
   byte memory[MEMORY_SIZE];

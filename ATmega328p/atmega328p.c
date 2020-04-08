@@ -712,6 +712,7 @@ bool mcu_init(const char *filename) {
   mcu.sp = RAM_SIZE;
   mcu.pc = 0;
   mcu.SREG.value = 0;
+  mcu.SR.value = 0;
   mcu.skip_next = false;
   mcu.sleeping = false;
   memset(mcu.opcode_lookup, 0, LOOKUP_SIZE);
