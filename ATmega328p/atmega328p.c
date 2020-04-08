@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <pthread.h>
 
-#define b_get(number, n) (number & (1LU << n))
+#define b_get(number, n) (number & (1LLU << n))
 #define MS 1000
 #define SEC (MS * 1000)
 #define CLOCK_FREQ (SEC / 1)
@@ -365,7 +367,7 @@ static inline void CP(uint32_t opcode) {
   uint8_t res = R[d] - R[r];
   mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(R[r], 3) || b_get(R[r], 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
   mcu.SREG.flags.V = b_get(R[d], 7) && !b_get(R[r], 7) && b_get(res, 7) || !b_get(R[d], 7) && b_get(R[r], 7) && b_get(res, 7);
-  mcu.SREG.flags.N = (res < 0);
+  mcu.SREG.flags.N = !!b_get(res, 7);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.SREG.flags.Z = (res == 0);
   mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(R[r], 7) || b_get(R[r], 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
@@ -381,7 +383,7 @@ static inline void CPC(uint32_t opcode) {
   uint8_t res = R[d] - R[r] - mcu.SREG.flags.C;
   mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(R[r], 3) || b_get(R[r], 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
   mcu.SREG.flags.V = b_get(R[d], 7) && !b_get(R[r], 7) && b_get(res, 7) || !b_get(R[d], 7) && b_get(R[r], 7) && b_get(res, 7);
-  mcu.SREG.flags.N = (res < 0);
+  mcu.SREG.flags.N = !!b_get(res, 7);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(R[r], 7) || b_get(R[r], 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
   mcu.SREG.flags.Z = (res == 0) && mcu.SREG.flags.Z;
@@ -397,7 +399,7 @@ static inline void CPI(uint32_t opcode) {
   uint8_t res = R[d] - k;
   mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(k, 3) || b_get(k, 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
   mcu.SREG.flags.V = b_get(R[d], 7) && !b_get(k, 7) && !b_get(res, 7) || !b_get(R[d], 7) && b_get(k, 7) && b_get(res, 7);
-  mcu.SREG.flags.N = (res < 0);
+  mcu.SREG.flags.N = !!b_get(res, 7);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.SREG.flags.Z = (res == 0);
   mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(k, 7) || b_get(k, 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
@@ -472,13 +474,128 @@ static inline void BRBC(uint32_t opcode) {
   mcu.pc += WORD_SIZE;
 }
 
+static inline void SBI(uint32_t opcode) {
+  // 1001 1010 AAAA Abbb
+  // Set I/O[A](b)
+  uint8_t b = opcode & 0b111;
+  uint8_t A = (opcode & 0b11111000) >> 3;
+  mcu.IO[A] |= (1LU << b);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void CBI(uint32_t opcode) {
+  // 1001 1000 AAAA Abbb
+  // Clear I/O[A](b)
+  uint8_t b = opcode & 0b111;
+  uint8_t A = (opcode & 0b11111000) >> 3;
+  mcu.IO[A] &= ~(1LU << b);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void LSR(uint32_t opcode) {
+  // 1001 010d dddd 0110
+  // C = R[d](0), R[d] >> 1
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  mcu.SREG.flags.C = !!b_get(mcu.R[d], 0);
+  mcu.R[d] >>= 1;
+  mcu.SREG.flags.Z = (mcu.R[d] == 0);
+  mcu.SREG.flags.N = 0;
+  mcu.SREG.flags.V = mcu.SREG.flags.N ^ mcu.SREG.flags.C;
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void ROR(uint32_t opcode) {
+  // 1001 010d dddd 0111
+  // C = R[d](0), R[d] >> 1, R[d](7) = C
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  bit carry = !!mcu.SREG.flags.C;
+  mcu.SREG.flags.C = !!b_get(mcu.R[d], 0);
+  mcu.R[d] >>= 1;
+  mcu.R[d] |= (carry << 7);
+  mcu.SREG.flags.Z = (mcu.R[d] == 0);
+  mcu.SREG.flags.N = !!b_get(mcu.R[d], 7);
+  mcu.SREG.flags.V = mcu.SREG.flags.N ^ mcu.SREG.flags.C;
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void ASR(uint32_t opcode) {
+  // 1001 010d dddd 0101
+  // Shift right without changing R[d](7), C = R[d](0)
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  bit b7 = b_get(mcu.R[d], 7);
+  mcu.SREG.flags.C = !!b_get(mcu.R[d], 0);
+  mcu.R[d] >>= 1;
+  mcu.R[d] |= b7;
+  mcu.SREG.flags.Z = (mcu.R[d] == 0);
+  mcu.SREG.flags.N = !!b_get(mcu.R[d], 7);
+  mcu.SREG.flags.V = mcu.SREG.flags.N ^ mcu.SREG.flags.C;
+  mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void SWAP(uint32_t opcode) {
+  // 1001 010d dddd 0010
+  // Swap nibbles
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  mcu.R[d] = ((mcu.R[d] & 0x0F) << 4) | ((mcu.R[d] & 0xF0) >> 4);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BSET(uint32_t opcode) {
+  // 1001 0100 0sss 1000
+  // SREG(s) = 1
+  uint8_t s = (opcode & 0b1110000) >> 4;
+  mcu.SREG.value |= (1LU << s);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BCLR(uint32_t opcode) {
+  // 1001 0100 1sss 1000
+  // SREG(s) = 0
+  uint8_t s = (opcode & 0b1110000) >> 4;
+  mcu.SREG.value &= ~(1LU << s);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BST(uint32_t opcode) {
+  // 1111 101d dddd 0bbb
+  // T = R[d](b)
+  uint8_t b = opcode & 0b111;
+  uint8_t d = (opcode & 0b11111) >> 4;
+  mcu.SREG.flags.T = !!b_get(mcu.R[d], b);
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BLD(uint32_t opcode) {
+  // 1111 100d dddd 0bbb
+  // R[d](b) = T
+  uint8_t b = opcode & 0b111;
+  uint8_t d = (opcode & 0b11111) >> 4;
+  mcu.R[d] |= ((!!mcu.SREG.flags.T) << b);
+  mcu.pc += WORD_SIZE;
+}
+
 static inline void NOP(uint32_t opcode) {
-  // No operation
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void SLEEP(uint32_t opcode) {
+  mcu.sleeping = true;
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void WDR(uint32_t opcode) {
+  // Reset watchdog timer
+  mcu.pc += WORD_SIZE;
+}
+
+static inline void BREAK(uint32_t opcode) {
   mcu.pc += WORD_SIZE;
 }
 
 static inline void XXX(uint32_t opcode) {
-  // 1111 1111 1111 1111
   // Unknown opcode
   printf("Unknown opcode! 0x%.4X\n", opcode);
   mcu.pc += WORD_SIZE;
@@ -596,6 +713,7 @@ bool mcu_init(const char *filename) {
   mcu.pc = 0;
   mcu.SREG.value = 0;
   mcu.skip_next = false;
+  mcu.sleeping = false;
   memset(mcu.opcode_lookup, 0, LOOKUP_SIZE);
   memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
   memset(mcu.memory, 0, MEMORY_SIZE);

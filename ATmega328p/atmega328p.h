@@ -54,6 +54,7 @@ typedef struct {
   uint16_t sp; // Stack pointer, 2 bytes needed to address the 2KB RAM space
   uint16_t pc; // Program counter
   bool skip_next;
+  bool sleeping;
   Instruction_t *opcode_lookup[LOOKUP_SIZE];
 } ATmega328p_t;
 
