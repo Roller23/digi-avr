@@ -7,8 +7,6 @@ int main(void) {
     if (mcu_load("test.hex")) {
       mcu_start();
     }
-    ATmega328p_t mcu = mcu_get_copy();
-    printf("MCU PC %d\n", mcu.pc);
   )
   run_test("Code execution", 
     mcu_init();
@@ -17,8 +15,6 @@ int main(void) {
       "ADC r3, r2, r2\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    printf("MCU PC %d\n", mcu.pc);
   )
   tests_summary();
   return 0;
