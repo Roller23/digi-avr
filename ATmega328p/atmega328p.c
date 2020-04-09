@@ -805,7 +805,7 @@ void mcu_run_code(const char *code) {
   remove("automated_test.hex");
   remove("automated_test.obj");
   remove("automated_test.eep.hex");
-  remove("automated_test.eep.cof");
+  remove("automated_test.cof");
   if (loaded) {
     mcu_start();
   } else {
