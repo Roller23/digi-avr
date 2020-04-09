@@ -54,8 +54,8 @@ typedef struct {
   void (*function)(uint32_t opcode);
   uint16_t mask1; // 1 for all fixed bits, 0 for variables
   uint16_t mask2; // 1 for all fixed 1s, 0 for all fixed 0s and variables
-  uint8_t cycles;
-  uint8_t length; // in WORDs
+  uint16_t cycles;
+  uint16_t length; // in WORDs
 } Instruction_t;
 
 typedef struct {
@@ -72,15 +72,17 @@ typedef struct {
   uint16_t pc; // Program counter
   bool skip_next;
   bool sleeping;
+  bool stopped;
   Instruction_t *opcode_lookup[LOOKUP_SIZE];
 } ATmega328p_t;
 
-
 // API
-bool mcu_init(const char *filename);
+void mcu_init(void);
+bool mcu_load(const char *filename);
 void mcu_start(void);
+void mcu_run_code(const char *code);
+ATmega328p_t mcu_get_copy(void);
 
-static bool load_hex_to_flash(const char *filename);
 static void create_lookup_table(void);
 static Instruction_t *find_instruction(uint16_t opcode);
 static uint16_t get_opcode(void);

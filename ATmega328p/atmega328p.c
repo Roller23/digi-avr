@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <stdarg.h>
 
 #define b_get(number, n) (number & (1LLU << n))
 #define MS 1000
@@ -592,7 +593,8 @@ static inline void WDR(uint32_t opcode) {
 }
 
 static inline void BREAK(uint32_t opcode) {
-  mcu.pc += WORD_SIZE;
+  printf("Break encountered\n");
+  mcu.stopped = true;
 }
 
 static inline void XXX(uint32_t opcode) {
@@ -621,11 +623,11 @@ static Instruction_t opcodes[] = {
   {"DEC", DEC, 0b1111111000001111, 0b1001010000001010, 1, 1},
   {"SER", SER, 0b1111111100001111, 0b1110111100001111, 1, 1},
   {"MUL", MUL, 0b1111110000000000, 0b1001110000000000, 2, 1},   //??1
-  {"MULS", MULS, 0b1111111100000000, 0b0000001000000000, 2, 1}, //??1
-  {"MULSU", MULSU, 0b1111111110001000, 0b0000001100000000, 2, 1},
-  {"FMUL", FMUL, 0b1111111110001000, 0b0000001100001000, 2, 1},
-  {"FMULS", FMULS, 0b1111111110001000, 0b0000001110000000, 2, 1},
-  {"FMULSU", FMULSU, 0b1111111110001000, 0b0000001110001000, 2, 1},
+  // {"MULS", MULS, 0b1111111100000000, 0b0000001000000000, 2, 1}, //??1
+  // {"MULSU", MULSU, 0b1111111110001000, 0b0000001100000000, 2, 1},
+  // {"FMUL", FMUL, 0b1111111110001000, 0b0000001100001000, 2, 1},
+  // {"FMULS", FMULS, 0b1111111110001000, 0b0000001110000000, 2, 1},
+  // {"FMULSU", FMULSU, 0b1111111110001000, 0b0000001110001000, 2, 1},
 
   {"RJMP", RJMP, 0b1111000000000000, 0b1100000000000000, 2, 1},
   {"IJMP", IJMP, 0b1111111111111111, 0b1001010000001001, 2, 1},
@@ -657,22 +659,22 @@ static Instruction_t opcodes[] = {
   {"BST", BST, 0b1111111000001000, 0b1111101000000000, 1, 1},
   {"BLD", BLD, 0b1111111000001000, 0b1111100000000000, 1, 1},
 
-  {"MOV", MOV, 0b1111110000000000, 0b0010110000000000, 1, 1},
-  {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
-  {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 2, 1}, //???1
+  // {"MOV", MOV, 0b1111110000000000, 0b0010110000000000, 1, 1},
+  // {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
+  // {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 2, 1}, //???1
 
-  {"ST", ST, 0b1111111000001111, 0b1001001000001100, 1, 1},
-  {"ST", ST, 0b1111111000001111, 0b1001001000001101, 1, 1},
-  {"ST", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
+  // {"ST", ST, 0b1111111000001111, 0b1001001000001100, 1, 1},
+  // {"ST", ST, 0b1111111000001111, 0b1001001000001101, 1, 1},
+  // {"ST", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
 
-  {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
-  {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
+  // {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
+  // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
 
-  //....
-  {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
-  {"OUT", OUT, 0b1111100000000000, 0b1011100000000000, 1, 1},
-  {"PUSH", PUSH, 0b1111111000001111, 0b1001001000001111, 2, 1},
-  {"POP", POP, 0b1111111000001111, 0b1001000000001111, 2, 1},
+  // //....
+  // {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
+  // {"OUT", OUT, 0b1111100000000000, 0b1011100000000000, 1, 1},
+  // {"PUSH", PUSH, 0b1111111000001111, 0b1001001000001111, 2, 1},
+  // {"POP", POP, 0b1111111000001111, 0b1001000000001111, 2, 1},
 
   {"NOP", NOP, 0b1111111111111111, 0b0000000000000000, 1, 1},
   {"SLEEP", SLEEP, 0b1111111111111111, 0b1001010110001000, 1, 1},
@@ -684,16 +686,6 @@ static Instruction_t opcodes[] = {
 
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
-static Instruction_t *find_instruction(uint16_t opcode) {
-  for (int i = 0; i < opcodes_count; i++) {
-    if ((opcodes[i].mask1 & opcode) == opcodes[i].mask2) {
-      return &opcodes[i];
-    }
-  }
-  // opcode not found!
-  return &opcodes[opcodes_count - 1]; // XXX
-}
-
 static uint16_t get_opcode(void) {
   if (mcu.pc >= MEMORY_SIZE - 1) {
     printf("Out of memory bounds!\n");
@@ -703,32 +695,27 @@ static uint16_t get_opcode(void) {
 }
 
 static void create_lookup_table(void) {
-  for (uint64_t i = 0; i < MEMORY_SIZE;) {
-    uint16_t opcode = (mcu.memory[i + 1] << 8) | mcu.memory[i];
-    if (mcu.opcode_lookup[opcode] == NULL) {
-      mcu.opcode_lookup[opcode] = find_instruction(opcode);  
-    }
-    i += WORD_SIZE * mcu.opcode_lookup[opcode]->length;
+  for (int i = 0; i < LOOKUP_SIZE; i++) {
+    mcu.opcode_lookup[i] = find_instruction(i);
   }
 }
 
-bool mcu_init(const char *filename) {
+static Instruction_t *find_instruction(uint16_t opcode) {
+  for (int i = 0; i < opcodes_count; i++) {
+    if ((opcodes[i].mask1 & opcode) == opcodes[i].mask2) {
+      return opcodes + i;
+    }
+  }
+  return opcodes + opcodes_count - 1; // XXX
+}
+
+void mcu_init(void) {
+  memset(&mcu, 0, sizeof(mcu));
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
   mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
   mcu.sp = RAM_SIZE;
-  mcu.pc = 0;
-  mcu.SREG.value = 0;
-  mcu.SR.value = 0;
-  mcu.skip_next = false;
-  mcu.sleeping = false;
-  memset(mcu.opcode_lookup, 0, LOOKUP_SIZE);
-  memset(mcu.data_memory, 0, DATA_MEMORY_SIZE);
-  memset(mcu.memory, 0, MEMORY_SIZE);
-  if (!load_hex_to_flash(filename)) {
-    return false;
-  }
   create_lookup_table();
 }
 
@@ -747,10 +734,13 @@ void mcu_start(void) {
     for (int i = 0; i < instruction->cycles; i++) {
       usleep(CLOCK_FREQ);
     }
+    if (mcu.stopped) {
+      break;
+    }
   }
 }
 
-static bool load_hex_to_flash(const char *filename) {
+bool mcu_load(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
     printf("Could not open %s\n", filename);
@@ -800,6 +790,27 @@ static bool load_hex_to_flash(const char *filename) {
   }
   printf("Done\n");
   return true;
+}
+
+void mcu_run_code(const char *code) {
+  FILE *file = fopen("automated_test.asm", "w");
+  if (file == NULL) {
+    return;
+  }
+  fputs(code, file);
+  fclose(file);
+  system("avra automated_test.asm > /dev/null");
+  mcu_load("automated_test.hex");
+  remove("automated_test.asm");
+  remove("automated_test.hex");
+  remove("automated_test.obj");
+  remove("automated_test.eep.hex");
+  remove("automated_test.eep.cof");
+  mcu_start();
+}
+
+ATmega328p_t mcu_get_copy(void) {
+  return mcu;
 }
 
 static void stack_push(uint16_t value) {
