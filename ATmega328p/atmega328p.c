@@ -800,13 +800,17 @@ void mcu_run_code(const char *code) {
   fputs(code, file);
   fclose(file);
   system("avra automated_test.asm > /dev/null");
-  mcu_load("automated_test.hex");
+  bool loaded = mcu_load("automated_test.hex");
   remove("automated_test.asm");
   remove("automated_test.hex");
   remove("automated_test.obj");
   remove("automated_test.eep.hex");
   remove("automated_test.eep.cof");
-  mcu_start();
+  if (loaded) {
+    mcu_start();
+  } else {
+    printf("Couldn't run the test\n");
+  }
 }
 
 ATmega328p_t mcu_get_copy(void) {
