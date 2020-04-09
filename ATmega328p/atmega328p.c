@@ -30,7 +30,7 @@ int print(const char *format, ...) {
 #define b_get(number, n) (number & (1LLU << n))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 1)
+#define CLOCK_FREQ (SEC / 2)
 
 static ATmega328p_t mcu;
 
@@ -805,7 +805,7 @@ bool mcu_load_file(const char *filename) {
         free(data_buffer);
         return false;
       }
-      print("Writing word 0x%.4X to flash memory\n", word);
+      print("Writing 0x%.4X to memory\n", word);
       memcpy(mcu.memory + memory_index, &word, sizeof(word));
       memory_index += sizeof(word);
     }
@@ -817,19 +817,18 @@ bool mcu_load_file(const char *filename) {
 }
 
 bool mcu_load_code(const char *code) {
-  FILE *file = fopen("automated_test.asm", "w");
+  FILE *file = fopen("_t.asm", "w");
   if (file == NULL) {
     return false;
   }
   fputs(code, file);
   fclose(file);
-  system("avra automated_test.asm > /dev/null");
-  bool loaded = mcu_load_file("automated_test.hex");
-  remove("automated_test.asm");
-  remove("automated_test.hex");
-  remove("automated_test.obj");
-  remove("automated_test.eep.hex");
-  remove("automated_test.cof");
+  system("avra _t.asm > /dev/null");
+  bool loaded = mcu_load_file("_t.hex");
+  char *files[] = {"_t.asm", "_t.hex", "_t.obj", "_t.eep.hex", "_t.cof"};
+  for (int i = 0; i < sizeof(files) / sizeof(char *); i++) {
+    remove(files[i]);
+  }
   return loaded;
 }
 
