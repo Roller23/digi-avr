@@ -9,6 +9,24 @@
 #include <pthread.h>
 #include <stdarg.h>
 
+#define CYAN "\033[36m"
+#define RESET "\x1B[0m"
+
+#define DEBUG 1
+
+int print(const char *format, ...) {
+  int a = 0;
+  #if DEBUG == 1
+    va_list args;
+    va_start(args, format);
+    a += printf(CYAN "[Debug] ");
+    a += vfprintf(stdout, format, args);
+    a += printf(RESET);
+    va_end(args);
+  #endif
+  return a;
+}
+
 #define b_get(number, n) (number & (1LLU << n))
 #define MS 1000
 #define SEC (MS * 1000)
@@ -593,13 +611,13 @@ static inline void WDR(uint32_t opcode) {
 }
 
 static inline void BREAK(uint32_t opcode) {
-  printf("Break encountered\n");
+  print("Break encountered\n");
   mcu.stopped = true;
 }
 
 static inline void XXX(uint32_t opcode) {
   // Unknown opcode
-  printf("Unknown opcode! 0x%.4X\n", opcode);
+  print("Unknown opcode! 0x%.4X\n", opcode);
   mcu.pc += WORD_SIZE;
 }
 
@@ -688,7 +706,7 @@ static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
 static uint16_t get_opcode(void) {
   if (mcu.pc >= MEMORY_SIZE - 1) {
-    printf("Out of memory bounds!\n");
+    print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
   }
   return (mcu.memory[mcu.pc + 1] << 8) | mcu.memory[mcu.pc];
@@ -729,7 +747,7 @@ void mcu_start(void) {
       mcu.skip_next = false;
       continue;
     }
-    printf("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
+    print("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
     instruction->function(opcode);
     for (int i = 0; i < instruction->cycles; i++) {
       usleep(CLOCK_FREQ);
@@ -740,10 +758,16 @@ void mcu_start(void) {
   }
 }
 
-bool mcu_load(const char *filename) {
+void mcu_resume(void) {
+  mcu.stopped = false;
+  mcu.pc += WORD_SIZE; // skip BREAK
+  mcu_start();
+}
+
+bool mcu_load_file(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
-    printf("Could not open %s\n", filename);
+    print("Could not open %s\n", filename);
     return false;
   }
   int length = 1024;
@@ -777,40 +801,36 @@ bool mcu_load(const char *filename) {
       sscanf(data_buffer + i + 2, "%2s", high);
       uint16_t word = ((uint16_t)strtol(high, 0, 16) << 8) | (uint16_t)strtol(low, 0, 16);
       if (memory_index >= MEMORY_SIZE) {
-        printf("Cannot fit the whole program in memory\n");
+        print("Cannot fit the whole program in memory\n");
         free(data_buffer);
         return false;
       }
-      printf("Writing word 0x%.4X to flash memory\n", word);
+      print("Writing word 0x%.4X to flash memory\n", word);
       memcpy(mcu.memory + memory_index, &word, sizeof(word));
       memory_index += sizeof(word);
     }
     free(data_buffer);
     memset(buffer, 0, length);
   }
-  printf("Done\n");
+  print("Done\n");
   return true;
 }
 
-void mcu_run_code(const char *code) {
+bool mcu_load_code(const char *code) {
   FILE *file = fopen("automated_test.asm", "w");
   if (file == NULL) {
-    return;
+    return false;
   }
   fputs(code, file);
   fclose(file);
   system("avra automated_test.asm > /dev/null");
-  bool loaded = mcu_load("automated_test.hex");
+  bool loaded = mcu_load_file("automated_test.hex");
   remove("automated_test.asm");
   remove("automated_test.hex");
   remove("automated_test.obj");
   remove("automated_test.eep.hex");
   remove("automated_test.cof");
-  if (loaded) {
-    mcu_start();
-  } else {
-    printf("Couldn't run the test\n");
-  }
+  return loaded;
 }
 
 ATmega328p_t mcu_get_copy(void) {

@@ -78,9 +78,10 @@ typedef struct {
 
 // API
 void mcu_init(void);
-bool mcu_load(const char *filename);
+bool mcu_load_file(const char *filename);
+bool mcu_load_code(const char *code);
 void mcu_start(void);
-void mcu_run_code(const char *code);
+void mcu_resume(void);
 ATmega328p_t mcu_get_copy(void);
 
 static void create_lookup_table(void);
