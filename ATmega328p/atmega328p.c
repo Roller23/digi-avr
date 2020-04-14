@@ -930,19 +930,21 @@ ATmega328p_t mcu_get_copy(void) {
 }
 
 static void stack_push16(uint16_t value) {
-  mcu.RAM[mcu.sp] = value & 0x00FF;
-  mcu.RAM[mcu.sp + 1] = (value & 0xFF00) >> 8;
+  *((uint16_t *)(mcu.RAM + mcu.sp)) = value;
   mcu.sp -= 2;
 }
-static void stack_push8(uint8_t value){
+
+static void stack_push8(uint8_t value) {
   mcu.RAM[mcu.sp] = value;
   mcu.sp -= 1;
 }
+
 static uint16_t stack_pop16() {
   mcu.sp += 2;
-  return (uint16_t)mcu.RAM[mcu.sp + 1] << 8 | mcu.RAM[mcu.sp]; 
+  return *(uint16_t *)(mcu.RAM + mcu.sp);
 }
-static uint8_t stack_pop8(){
+
+static uint8_t stack_pop8() {
   mcu.sp += 1;
   return mcu.RAM[mcu.sp];
 }
