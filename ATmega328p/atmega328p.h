@@ -88,8 +88,10 @@ static void create_lookup_table(void);
 static Instruction_t *find_instruction(uint16_t opcode);
 static uint16_t get_opcode(void);
 
-static void stack_push(uint16_t value);
-static uint16_t stack_pop(void);
+static void stack_push16(uint16_t value);
+static void stack_push8(uint8_t value);
+static uint16_t stack_pop16(void);
+static uint8_t stack_pop8(void);
 
 static uint16_t word_reg_get(uint8_t d);
 static uint16_t word_reg_set(uint8_t d, uint16_t value);

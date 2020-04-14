@@ -301,6 +301,99 @@ static inline void MUL(uint32_t opcode){
   word_reg_set(0, result);
   mcu.pc += WORD_SIZE;
 }
+static inline void MULS(uint32_t opcode){
+  // 0000 0010 dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r += 16;
+  int16_t result = (int8_t)mcu.R[reg_d] * (int8_t)mcu.R[reg_r];
+  mcu.SREG.flags.C = !!b_get(result, 15);
+  mcu.SREG.flags.Z = (result == 0);
+  word_reg_set(0, (uint16_t)result);
+  mcu.pc += WORD_SIZE;
+}
+static inline void MULSU(uint32_t opcode){
+  // 0000 0011 0ddd 0rrr
+  uint8_t reg_d = (opcode & 0x70) >> 4;
+  reg_d += 16;
+  uint8_t reg_r = (opcode & 0x7);
+  reg_r += 16;
+  int16_t result = (int8_t)mcu.R[reg_d] * mcu.R[reg_r];
+  mcu.SREG.flags.C = !!b_get(result, 15);
+  mcu.SREG.flags.Z = (result == 0);
+  word_reg_set(0, (uint16_t)result);
+  mcu.pc += WORD_SIZE;
+}
+static inline void FMUL(uint32_t opcode){
+  // 0000 0011 0ddd 1rrr
+  uint8_t reg_d = (opcode & 0x70) >> 4;
+  reg_d += 16;
+  uint8_t reg_r = (opcode & 0x7);
+  reg_r += 16;
+  double d = (mcu.R[reg_d] / (double)(1 << 7));
+  double r = (mcu.R[reg_r] / (double)(1 << 7));
+  double res = d * r;
+  uint16_t result = ;
+  mcu.SREG.flags.C = (res >= 2);
+  mcu.SREG.flags.Z = (result == 0);
+  word_reg_set(0, (uint16_t)result);
+  mcu.pc += WORD_SIZE;
+}
+static inline void FMULS(uint32_t opcode);
+static inline void FMULSU(uint32_t opcode);
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+static inline void MOV(uint32_t opcode){
+  // 0010 11rd dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  reg_r |= b_get(opcode, 9) >> 5;
+  mcu.R[reg_d] = mcu.R[reg_r];
+  mcu.pc += WORD_SIZE;  
+}
+static inline void MOVW(uint32_t opcode){
+  // 0000 0001 dddd rrrr
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  uint8_t reg_r = (opcode & 0xF);
+  word_reg_set(reg_d, word_reg_get(reg_r));
+  mcu.pc += WORD_SIZE;  
+}
+static inline void LDI(uint32_t opcode){
+  // 1110 kkkk dddd kkkk
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d += 16;
+  uint8_t k = (opcode & 0xF);
+  k |= (opcode & 0xF00) >> 4;
+  mcu.R[reg_d] = k;
+  mcu.pc += WORD_SIZE;  
+}
+//-----------
+static inline void IN(uint32_t opcode){
+  // 1011 0AAd dddd AAAA
+  // uint8_t reg_d = (opcode & 0xF0) >> 4;
+  // reg_d |= b_get(opcode, 8) >> 4;
+  // uint8_t a = (opcode & 0xF) | (opcode & 0x600) >> 5;
+  
+  // mcu.pc += WORD_SIZE;  
+}
+static inline void OUT(uint32_t opcode);
+static inline void PUSH(uint32_t opcode){
+  // 1001 001d dddd 1111
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  stack_push8(mcu.R[reg_d]);
+  mcu.pc += WORD_SIZE; 
+}
+static inline void POP(uint32_t opcode){
+  // 1001 000d dddd 1111
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  mcu.R[reg_d] = stack_pop8();
+  mcu.pc += WORD_SIZE; 
+}
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
@@ -333,13 +426,13 @@ static inline void RCALL(uint32_t opcode) {
   // 1101 kkkk kkkk kkkk
   // Jump to address + 1 + PC, push current PC + 1 onto stack (relative call)
   uint16_t k = opcode & 0xFFF;
-  stack_push(mcu.pc + WORD_SIZE);
+  stack_push16(mcu.pc + WORD_SIZE);
   mcu.pc += k + WORD_SIZE;
 }
 
 static inline void ICALL(uint32_t opcode) {
   // Indirect call, PC = Z, push PC + 1 to stack
-  stack_push(mcu.pc + WORD_SIZE);
+  stack_push16(mcu.pc + WORD_SIZE);
   mcu.pc = Z_reg_get();
 }
 
@@ -351,18 +444,18 @@ static inline void CALL(uint32_t opcode) {
   k |= b_get(opcode, 16);
   k |= (0xF00000) >> 3;
   k |= b_get(opcode, 24) >> 3;
-  stack_push(mcu.pc + 2 * WORD_SIZE);
+  stack_push16(mcu.pc + 2 * WORD_SIZE);
   mcu.pc = k;
 }
 
 static inline void RET(uint32_t opcode) {
   // Return from subroutine, PC = stack
-  mcu.pc = stack_pop();
+  mcu.pc = stack_pop16();
 }
 
 static inline void RETI(uint32_t opcode) {
   // Return from interrupt and set I to 1
-  mcu.pc = stack_pop();
+  mcu.pc = stack_pop16();
   mcu.SREG.flags.I = 1;
 }
 
@@ -641,8 +734,8 @@ static Instruction_t opcodes[] = {
   {"DEC", DEC, 0b1111111000001111, 0b1001010000001010, 1, 1},
   {"SER", SER, 0b1111111100001111, 0b1110111100001111, 1, 1},
   {"MUL", MUL, 0b1111110000000000, 0b1001110000000000, 2, 1},   //??1
-  // {"MULS", MULS, 0b1111111100000000, 0b0000001000000000, 2, 1}, //??1
-  // {"MULSU", MULSU, 0b1111111110001000, 0b0000001100000000, 2, 1},
+  {"MULS", MULS, 0b1111111100000000, 0b0000001000000000, 2, 1}, //??1
+  {"MULSU", MULSU, 0b1111111110001000, 0b0000001100000000, 2, 1},
   // {"FMUL", FMUL, 0b1111111110001000, 0b0000001100001000, 2, 1},
   // {"FMULS", FMULS, 0b1111111110001000, 0b0000001110000000, 2, 1},
   // {"FMULSU", FMULSU, 0b1111111110001000, 0b0000001110001000, 2, 1},
@@ -677,9 +770,9 @@ static Instruction_t opcodes[] = {
   {"BST", BST, 0b1111111000001000, 0b1111101000000000, 1, 1},
   {"BLD", BLD, 0b1111111000001000, 0b1111100000000000, 1, 1},
 
-  // {"MOV", MOV, 0b1111110000000000, 0b0010110000000000, 1, 1},
-  // {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
-  // {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 2, 1}, //???1
+  {"MOV", MOV, 0b1111110000000000, 0b0010110000000000, 1, 1},
+  {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
+  {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 2, 1}, //???1
 
   // {"ST", ST, 0b1111111000001111, 0b1001001000001100, 1, 1},
   // {"ST", ST, 0b1111111000001111, 0b1001001000001101, 1, 1},
@@ -691,13 +784,13 @@ static Instruction_t opcodes[] = {
   // //....
   // {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
   // {"OUT", OUT, 0b1111100000000000, 0b1011100000000000, 1, 1},
-  // {"PUSH", PUSH, 0b1111111000001111, 0b1001001000001111, 2, 1},
-  // {"POP", POP, 0b1111111000001111, 0b1001000000001111, 2, 1},
+  {"PUSH", PUSH, 0b1111111000001111, 0b1001001000001111, 2, 1},
+  {"POP", POP, 0b1111111000001111, 0b1001000000001111, 2, 1},
 
   {"NOP", NOP, 0b1111111111111111, 0b0000000000000000, 1, 1},
   {"SLEEP", SLEEP, 0b1111111111111111, 0b1001010110001000, 1, 1},
   {"WDR", WDR, 0b1111111111111111, 0b1001010110101000, 1, 1},
-  {"BREAK", BREAK, 0b1111111111111111, 0b1001010110011000, 0, 1}, //???
+  {"BREAK", BREAK, 0b1111111111111111, 0b1001010110011000, 0, 1},
 
   {"XXX", XXX, 0b1111111111111111, 0b1111111111111111, 1, 1}
 };
@@ -836,15 +929,22 @@ ATmega328p_t mcu_get_copy(void) {
   return mcu;
 }
 
-static void stack_push(uint16_t value) {
-  mcu.sp -= sizeof(value);
-  mcu.RAM[mcu.sp] = value;
+static void stack_push16(uint16_t value) {
+  mcu.RAM[mcu.sp] = value & 0x00FF;
+  mcu.RAM[mcu.sp + 1] = (value & 0xFF00) >> 8;
+  mcu.sp -= 2;
 }
-
-static uint16_t stack_pop(void) {
-  uint16_t value = mcu.RAM[mcu.sp];
-  mcu.sp += sizeof(value);
-  return value;
+static void stack_push8(uint8_t value){
+  mcu.RAM[mcu.sp] = value;
+  mcu.sp -= 1;
+}
+static uint16_t stack_pop16() {
+  mcu.sp += 2;
+  return (uint16_t)mcu.RAM[mcu.sp + 1] << 8 | mcu.RAM[mcu.sp]; 
+}
+static uint8_t stack_pop8(){
+  mcu.sp += 1;
+  return mcu.RAM[mcu.sp];
 }
 
 static uint16_t word_reg_get(uint8_t d) {
