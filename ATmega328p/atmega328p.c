@@ -590,7 +590,7 @@ static inline void BRBC(uint32_t opcode) {
   // 1111 01kk kkkk ksss
   // Branch if SREG(s) is cleared (PC += k + 1), k is in U2
   uint8_t s = opcode & 0b111;
-  int16_t k = -64 * !!b_get(opcode, 9) + ((opcode & 0b111111000) >> 3);
+  int8_t k = ((b_get(opcode, 9) << 1) | (opcode & 0b1111111000)) >> 3;
   if (!b_get(mcu.SREG.value, s)) {
     mcu.pc += k + 1;
     return;
