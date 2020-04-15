@@ -86,7 +86,8 @@ ATmega328p_t mcu_get_copy(void);
 
 static void create_lookup_table(void);
 static Instruction_t *find_instruction(uint16_t opcode);
-static uint16_t get_opcode(void);
+static uint16_t get_opcode16(void);
+static uint32_t get_opcode32(void);
 
 static void stack_push16(uint16_t value);
 static void stack_push8(uint8_t value);

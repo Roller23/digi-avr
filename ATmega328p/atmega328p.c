@@ -14,7 +14,7 @@
 
 #define DEBUG 1
 
-int print(const char *format, ...) {
+static int print(const char *format, ...) {
   int a = 0;
   #if DEBUG == 1
     va_list args;
@@ -27,10 +27,23 @@ int print(const char *format, ...) {
   return a;
 }
 
-#define b_get(number, n) (number & (1LLU << n))
+#define b_get(number, n) (number & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 2)
+#define CLOCK_FREQ (SEC / 10)
+
+static void print_bits(uint32_t number) {
+  char bits[35];
+  memset(bits, 0, 33);
+  for (int i = sizeof(number) * 8 - 1, j = 0; i >= 0; i--, j++) {
+    bits[j] = b_get(number, i) ? '1' : '0';
+    if (i == 16) {
+      bits[j + 1] = '\n';
+      j++;
+    }
+  }
+  print("0x%.8X bits\n%s\n", number, bits);
+}
 
 static ATmega328p_t mcu;
 
@@ -48,7 +61,7 @@ static inline void ADD(uint32_t opcode) {
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.C = !!(b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) | b_get(mcu.R[reg_r], 7) & ~b_get(result, 7) | ~b_get(result, 7) & b_get(mcu.R[reg_d], 7));
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void ADC(uint32_t opcode) {
@@ -65,7 +78,7 @@ static inline void ADC(uint32_t opcode) {
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.C = !!(b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) | b_get(mcu.R[reg_r], 7) & ~b_get(result, 7) | ~b_get(result, 7) & b_get(mcu.R[reg_d], 7));
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void ADIW(uint32_t opcode) {
   // 1001 0110 KKdd KKKK
@@ -82,7 +95,7 @@ static inline void ADIW(uint32_t opcode) {
   mcu.SREG.flags.C = !b_get(result, 15) & !!b_get(rd, 15);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   word_reg_set(reg_d, result);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void SUB(uint32_t opcode){
   // 0001 10rd dddd rrrr
@@ -98,7 +111,7 @@ static inline void SUB(uint32_t opcode){
   mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) | b_get(mcu.R[reg_r], 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void SUBI(uint32_t opcode){
   // 0101 kkkk dddd kkkk
@@ -113,7 +126,7 @@ static inline void SUBI(uint32_t opcode){
   mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(k, 7) | b_get(k, 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void SBC(uint32_t opcode){
   // 0000 10rd dddd rrrr
@@ -129,7 +142,7 @@ static inline void SBC(uint32_t opcode){
   mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(mcu.R[reg_r], 7) | b_get(mcu.R[reg_r], 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void SBCI(uint32_t opcode){
   // 0100 kkkk dddd kkkk
@@ -144,7 +157,7 @@ static inline void SBCI(uint32_t opcode){
   mcu.SREG.flags.C = !!(~b_get(mcu.R[reg_d], 7) & b_get(k, 7) | b_get(k, 7) & b_get(result, 7) | b_get(result, 7) & ~b_get(mcu.R[reg_d], 7));
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void SBIW(uint32_t opcode){
   // 1001 0111 KKdd KKKK
@@ -161,7 +174,7 @@ static inline void SBIW(uint32_t opcode){
   mcu.SREG.flags.C = !!b_get(result, 15) & !b_get(rd, 15);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   word_reg_set(reg_d, result);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void AND(uint32_t opcode){
   // 0010 00rd dddd rrrr
@@ -175,7 +188,7 @@ static inline void AND(uint32_t opcode){
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void ANDI(uint32_t opcode){
   // 0111 KKKK dddd KKKK
@@ -189,7 +202,7 @@ static inline void ANDI(uint32_t opcode){
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void OR(uint32_t opcode){
   // 0010 10rd dddd rrrr
@@ -203,7 +216,7 @@ static inline void OR(uint32_t opcode){
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void ORI(uint32_t opcode){
   // 0110 KKKK dddd KKKK
@@ -217,7 +230,7 @@ static inline void ORI(uint32_t opcode){
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void EOR(uint32_t opcode){
   // 0010 01rd dddd rrrr
@@ -231,7 +244,7 @@ static inline void EOR(uint32_t opcode){
   mcu.SREG.flags.Z = (result == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void COM(uint32_t opcode){
   // 1001 010d dddd 0000
@@ -244,7 +257,7 @@ static inline void COM(uint32_t opcode){
   mcu.SREG.flags.C = 1;
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void NEG(uint32_t opcode){
   // 1001 010d dddd 0001
@@ -258,7 +271,7 @@ static inline void NEG(uint32_t opcode){
   mcu.SREG.flags.C = (result != 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.R[reg_d] = result;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void INC(uint32_t opcode){
   // 1001 010d dddd 0011
@@ -269,7 +282,7 @@ static inline void INC(uint32_t opcode){
   mcu.SREG.flags.N = !!b_get(mcu.R[reg_d], 7);
   mcu.SREG.flags.Z = (mcu.R[reg_d] == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void DEC(uint32_t opcode){
   // 1001 010d dddd 1010
@@ -280,14 +293,14 @@ static inline void DEC(uint32_t opcode){
   mcu.SREG.flags.N = !!b_get(mcu.R[reg_d], 7);
   mcu.SREG.flags.Z = (mcu.R[reg_d] == 0);
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void SER(uint32_t opcode){
   // 1110 1111 dddd 1111
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d += 16;
   mcu.R[reg_d] = 0xFF;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void MUL(uint32_t opcode){
   // 1001 11rd dddd rrrr
@@ -299,7 +312,7 @@ static inline void MUL(uint32_t opcode){
   mcu.SREG.flags.C = !!b_get(result, 15);
   mcu.SREG.flags.Z = (result == 0);
   word_reg_set(0, result);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void MULS(uint32_t opcode){
   // 0000 0010 dddd rrrr
@@ -311,7 +324,7 @@ static inline void MULS(uint32_t opcode){
   mcu.SREG.flags.C = !!b_get(result, 15);
   mcu.SREG.flags.Z = (result == 0);
   word_reg_set(0, (uint16_t)result);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 static inline void MULSU(uint32_t opcode){
   // 0000 0011 0ddd 0rrr
@@ -323,7 +336,7 @@ static inline void MULSU(uint32_t opcode){
   mcu.SREG.flags.C = !!b_get(result, 15);
   mcu.SREG.flags.Z = (result == 0);
   word_reg_set(0, (uint16_t)result);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 // static inline void FMUL(uint32_t opcode){
 //   // 0000 0011 0ddd 1rrr
@@ -338,7 +351,7 @@ static inline void MULSU(uint32_t opcode){
 //   mcu.SREG.flags.C = (res >= 2);
 //   mcu.SREG.flags.Z = (result == 0);
 //   word_reg_set(0, (uint16_t)result);
-//   mcu.pc += WORD_SIZE;
+//   mcu.pc += 1;
 // }
 static inline void FMULS(uint32_t opcode);
 static inline void FMULSU(uint32_t opcode);
@@ -352,14 +365,14 @@ static inline void MOV(uint32_t opcode){
   uint8_t reg_r = (opcode & 0xF);
   reg_r |= b_get(opcode, 9) >> 5;
   mcu.R[reg_d] = mcu.R[reg_r];
-  mcu.pc += WORD_SIZE;  
+  mcu.pc += 1;  
 }
 static inline void MOVW(uint32_t opcode){
   // 0000 0001 dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   uint8_t reg_r = (opcode & 0xF);
   word_reg_set(reg_d, word_reg_get(reg_r));
-  mcu.pc += WORD_SIZE;  
+  mcu.pc += 1;  
 }
 static inline void LDI(uint32_t opcode){
   // 1110 kkkk dddd kkkk
@@ -368,7 +381,7 @@ static inline void LDI(uint32_t opcode){
   uint8_t k = (opcode & 0xF);
   k |= (opcode & 0xF00) >> 4;
   mcu.R[reg_d] = k;
-  mcu.pc += WORD_SIZE;  
+  mcu.pc += 1;  
 }
 //-----------
 static inline void IN(uint32_t opcode){
@@ -377,7 +390,7 @@ static inline void IN(uint32_t opcode){
   // reg_d |= b_get(opcode, 8) >> 4;
   // uint8_t a = (opcode & 0xF) | (opcode & 0x600) >> 5;
   
-  // mcu.pc += WORD_SIZE;  
+  // mcu.pc += 1;  
 }
 static inline void OUT(uint32_t opcode);
 static inline void PUSH(uint32_t opcode){
@@ -385,14 +398,14 @@ static inline void PUSH(uint32_t opcode){
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= b_get(opcode, 8) >> 4;
   stack_push8(mcu.R[reg_d]);
-  mcu.pc += WORD_SIZE; 
+  mcu.pc += 1; 
 }
 static inline void POP(uint32_t opcode){
   // 1001 000d dddd 1111
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= b_get(opcode, 8) >> 4;
   mcu.R[reg_d] = stack_pop8();
-  mcu.pc += WORD_SIZE; 
+  mcu.pc += 1; 
 }
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -403,7 +416,7 @@ static inline void RJMP(uint32_t opcode) {
   // 1100 kkkk kkkk kkkk
   // Relative jump to PC + k + 1
   uint16_t k = opcode & 0x0FFF;
-  mcu.pc += k + WORD_SIZE;
+  mcu.pc += k + 1;
 }
 
 static inline void IJMP(uint32_t opcode) {
@@ -415,8 +428,7 @@ static inline void JMP(uint32_t opcode) {
   // 1001 010k kkkk 110k
   // kkkk kkkk kkkk kkkk
   // Jump to address k, PC = k
-  uint32_t k = opcode & 0xFFFF;
-  k |= b_get(opcode, 16);
+  uint32_t k = opcode & 0b11111111111111111;
   k |= (opcode & 0xF00000) >> 3;
   k |= b_get(opcode, 24) >> 3;
   mcu.pc = k;
@@ -426,13 +438,13 @@ static inline void RCALL(uint32_t opcode) {
   // 1101 kkkk kkkk kkkk
   // Jump to address + 1 + PC, push current PC + 1 onto stack (relative call)
   uint16_t k = opcode & 0xFFF;
-  stack_push16(mcu.pc + WORD_SIZE);
-  mcu.pc += k + WORD_SIZE;
+  stack_push16(mcu.pc + 1);
+  mcu.pc += k + 1;
 }
 
 static inline void ICALL(uint32_t opcode) {
   // Indirect call, PC = Z, push PC + 1 to stack
-  stack_push16(mcu.pc + WORD_SIZE);
+  stack_push16(mcu.pc + 1);
   mcu.pc = Z_reg_get();
 }
 
@@ -444,7 +456,7 @@ static inline void CALL(uint32_t opcode) {
   k |= b_get(opcode, 16);
   k |= (0xF00000) >> 3;
   k |= b_get(opcode, 24) >> 3;
-  stack_push16(mcu.pc + 2 * WORD_SIZE);
+  stack_push16(mcu.pc + 2);
   mcu.pc = k;
 }
 
@@ -467,7 +479,7 @@ static inline void CPSE(uint32_t opcode) {
   if (r == d) {
     mcu.skip_next = true;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void CP(uint32_t opcode) {
@@ -483,7 +495,7 @@ static inline void CP(uint32_t opcode) {
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.SREG.flags.Z = (res == 0);
   mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(R[r], 7) || b_get(R[r], 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void CPC(uint32_t opcode) {
@@ -499,7 +511,7 @@ static inline void CPC(uint32_t opcode) {
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(R[r], 7) || b_get(R[r], 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
   mcu.SREG.flags.Z = (res == 0) && mcu.SREG.flags.Z;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void CPI(uint32_t opcode) {
@@ -515,7 +527,7 @@ static inline void CPI(uint32_t opcode) {
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.SREG.flags.Z = (res == 0);
   mcu.SREG.flags.C = !b_get(R[d], 7) && b_get(k, 7) || b_get(k, 7) && b_get(res, 7) || b_get(res, 7) && !b_get(R[d], 7);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SBRC(uint32_t opcode) {
@@ -526,7 +538,7 @@ static inline void SBRC(uint32_t opcode) {
   if (!b_get(mcu.R[r], b)) {
     mcu.skip_next = true;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SBRS(uint32_t opcode) {
@@ -537,7 +549,7 @@ static inline void SBRS(uint32_t opcode) {
   if (b_get(mcu.R[r], b)) {
     mcu.skip_next = true;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SBIC(uint32_t opcode) {
@@ -548,7 +560,7 @@ static inline void SBIC(uint32_t opcode) {
   if (!b_get(mcu.IO[A], b)) {
     mcu.skip_next = true;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SBIS(uint32_t opcode) {
@@ -559,7 +571,7 @@ static inline void SBIS(uint32_t opcode) {
   if (b_get(mcu.IO[A], b)) {
     mcu.skip_next = true;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BRBS(uint32_t opcode) {
@@ -568,10 +580,10 @@ static inline void BRBS(uint32_t opcode) {
   uint8_t s = opcode & 0b111;
   int16_t k = -64 * !!b_get(opcode, 9) + ((opcode & 0b111111000) >> 3);
   if (b_get(mcu.SREG.value, s)) {
-    mcu.pc += k + WORD_SIZE;
+    mcu.pc += k + 1;
     return;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BRBC(uint32_t opcode) {
@@ -580,10 +592,10 @@ static inline void BRBC(uint32_t opcode) {
   uint8_t s = opcode & 0b111;
   int16_t k = -64 * !!b_get(opcode, 9) + ((opcode & 0b111111000) >> 3);
   if (!b_get(mcu.SREG.value, s)) {
-    mcu.pc += k + WORD_SIZE;
+    mcu.pc += k + 1;
     return;
   }
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SBI(uint32_t opcode) {
@@ -592,7 +604,7 @@ static inline void SBI(uint32_t opcode) {
   uint8_t b = opcode & 0b111;
   uint8_t A = (opcode & 0b11111000) >> 3;
   mcu.IO[A] |= (1LU << b);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void CBI(uint32_t opcode) {
@@ -601,7 +613,7 @@ static inline void CBI(uint32_t opcode) {
   uint8_t b = opcode & 0b111;
   uint8_t A = (opcode & 0b11111000) >> 3;
   mcu.IO[A] &= ~(1LU << b);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void LSR(uint32_t opcode) {
@@ -614,7 +626,7 @@ static inline void LSR(uint32_t opcode) {
   mcu.SREG.flags.N = 0;
   mcu.SREG.flags.V = mcu.SREG.flags.N ^ mcu.SREG.flags.C;
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void ROR(uint32_t opcode) {
@@ -629,7 +641,7 @@ static inline void ROR(uint32_t opcode) {
   mcu.SREG.flags.N = !!b_get(mcu.R[d], 7);
   mcu.SREG.flags.V = mcu.SREG.flags.N ^ mcu.SREG.flags.C;
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void ASR(uint32_t opcode) {
@@ -644,7 +656,7 @@ static inline void ASR(uint32_t opcode) {
   mcu.SREG.flags.N = !!b_get(mcu.R[d], 7);
   mcu.SREG.flags.V = mcu.SREG.flags.N ^ mcu.SREG.flags.C;
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SWAP(uint32_t opcode) {
@@ -652,7 +664,7 @@ static inline void SWAP(uint32_t opcode) {
   // Swap nibbles
   uint8_t d = (opcode & 0b111110000) >> 4;
   mcu.R[d] = ((mcu.R[d] & 0x0F) << 4) | ((mcu.R[d] & 0xF0) >> 4);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BSET(uint32_t opcode) {
@@ -660,7 +672,7 @@ static inline void BSET(uint32_t opcode) {
   // SREG(s) = 1
   uint8_t s = (opcode & 0b1110000) >> 4;
   mcu.SREG.value |= (1LU << s);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BCLR(uint32_t opcode) {
@@ -668,7 +680,7 @@ static inline void BCLR(uint32_t opcode) {
   // SREG(s) = 0
   uint8_t s = (opcode & 0b1110000) >> 4;
   mcu.SREG.value &= ~(1LU << s);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BST(uint32_t opcode) {
@@ -677,7 +689,7 @@ static inline void BST(uint32_t opcode) {
   uint8_t b = opcode & 0b111;
   uint8_t d = (opcode & 0b11111) >> 4;
   mcu.SREG.flags.T = !!b_get(mcu.R[d], b);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BLD(uint32_t opcode) {
@@ -686,21 +698,21 @@ static inline void BLD(uint32_t opcode) {
   uint8_t b = opcode & 0b111;
   uint8_t d = (opcode & 0b11111) >> 4;
   mcu.R[d] |= ((!!mcu.SREG.flags.T) << b);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void NOP(uint32_t opcode) {
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void SLEEP(uint32_t opcode) {
   mcu.sleeping = true;
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void WDR(uint32_t opcode) {
   // Reset watchdog timer
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static inline void BREAK(uint32_t opcode) {
@@ -711,7 +723,7 @@ static inline void BREAK(uint32_t opcode) {
 static inline void XXX(uint32_t opcode) {
   // Unknown opcode
   print("Unknown opcode! 0x%.4X\n", opcode);
-  mcu.pc += WORD_SIZE;
+  mcu.pc += 1;
 }
 
 static Instruction_t opcodes[] = {
@@ -742,7 +754,7 @@ static Instruction_t opcodes[] = {
 
   {"RJMP", RJMP, 0b1111000000000000, 0b1100000000000000, 2, 1},
   {"IJMP", IJMP, 0b1111111111111111, 0b1001010000001001, 2, 1},
-  {"JMP", JMP, 0b1111111000001110, 0b1001010000001100, 3, 1},
+  {"JMP", JMP, 0b1111111000001110, 0b1001010000001100, 3, 2},
   {"RCALL", RCALL, 0b1111000000000000, 0b1101000000000000, 3, 1},
   {"ICALL", ICALL, 0b1111111111111111, 0b1001010100001001, 3, 1},
   {"CALL", CALL, 0b1111111000001110, 0b1001010000001110, 4, 1},
@@ -772,7 +784,7 @@ static Instruction_t opcodes[] = {
 
   {"MOV", MOV, 0b1111110000000000, 0b0010110000000000, 1, 1},
   {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
-  {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 2, 1}, //???1
+  {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 1, 1}, //???1
 
   // {"ST", ST, 0b1111111000001111, 0b1001001000001100, 1, 1},
   // {"ST", ST, 0b1111111000001111, 0b1001001000001101, 1, 1},
@@ -797,12 +809,21 @@ static Instruction_t opcodes[] = {
 
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
-static uint16_t get_opcode(void) {
+static uint16_t get_opcode16(void) {
   if (mcu.pc >= MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
   }
-  return (mcu.memory[mcu.pc + 1] << 8) | mcu.memory[mcu.pc];
+  return *((uint16_t *)(mcu.memory + mcu.pc * WORD_SIZE));
+}
+
+static uint32_t get_opcode32(void) {
+  if (mcu.pc >= MEMORY_SIZE - 1) {
+    print("Out of memory bounds!\n");
+    exit(EXIT_FAILURE);
+  }
+  return *((uint32_t *)(mcu.memory + mcu.pc * WORD_SIZE));
+  return ((get_opcode16()) << 16) | *(uint16_t *)(mcu.memory + (mcu.pc + 1) * WORD_SIZE);
 }
 
 static void create_lookup_table(void) {
@@ -832,15 +853,18 @@ void mcu_init(void) {
 
 void mcu_start(void) {
   while (true) {
-    uint16_t opcode = get_opcode();
+    uint32_t opcode = get_opcode16();
     // TO DO: check if it's a multi opcode instruction
     Instruction_t *instruction = mcu.opcode_lookup[opcode];
     if (mcu.skip_next) {
-      mcu.pc += WORD_SIZE * instruction->length;
+      mcu.pc += instruction->length;
       mcu.skip_next = false;
       continue;
     }
     print("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
+    if (instruction->length == 2) {
+      opcode = get_opcode32();
+    }
     instruction->function(opcode);
     for (int i = 0; i < instruction->cycles; i++) {
       usleep(CLOCK_FREQ);
@@ -853,7 +877,7 @@ void mcu_start(void) {
 
 void mcu_resume(void) {
   mcu.stopped = false;
-  mcu.pc += WORD_SIZE; // skip BREAK
+  mcu.pc += 1; // skip BREAK
   mcu_start();
 }
 
