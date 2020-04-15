@@ -30,7 +30,7 @@ static int print(const char *format, ...) {
 #define b_get(number, n) (number & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 10)
+#define CLOCK_FREQ (SEC / 30)
 
 static void print_bits(uint32_t number) {
   char bits[35];
@@ -810,7 +810,7 @@ static Instruction_t opcodes[] = {
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
 static uint16_t get_opcode16(void) {
-  if (mcu.pc >= MEMORY_SIZE - 1) {
+  if ((mcu.pc + 1) * WORD_SIZE >= MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
   }
@@ -818,12 +818,11 @@ static uint16_t get_opcode16(void) {
 }
 
 static uint32_t get_opcode32(void) {
-  if (mcu.pc >= MEMORY_SIZE - 1) {
+  if ((mcu.pc + 2) * WORD_SIZE  >= MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
   }
-  return *((uint32_t *)(mcu.memory + mcu.pc * WORD_SIZE));
-  return ((get_opcode16()) << 16) | *(uint16_t *)(mcu.memory + (mcu.pc + 1) * WORD_SIZE);
+  return (get_opcode16() << 16) | *(uint16_t *)(mcu.memory + (mcu.pc + 1) * WORD_SIZE);
 }
 
 static void create_lookup_table(void) {

@@ -60,7 +60,7 @@ int main(void) {
   run_test("JMP",
     execute(
       "LDI R23, 55\n"
-      "JMP halt\n"
+      "JMP halt\n" // 2 words
       "NOP\n"
       "NOP\n"
       "LDI R23, 0\n"
@@ -69,6 +69,9 @@ int main(void) {
       "halt: NOP\n"
       "BREAK"
     );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[23] == 55);
+    assert(mcu.pc == 9);
   )
   tests_summary();
   return 0;
