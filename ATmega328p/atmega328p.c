@@ -338,23 +338,54 @@ static inline void MULSU(uint32_t opcode){
   word_reg_set(0, (uint16_t)result);
   mcu.pc += 1;
 }
-// static inline void FMUL(uint32_t opcode){
-//   // 0000 0011 0ddd 1rrr
-//   uint8_t reg_d = (opcode & 0x70) >> 4;
-//   reg_d += 16;
-//   uint8_t reg_r = (opcode & 0x7);
-//   reg_r += 16;
-//   double d = (mcu.R[reg_d] / (double)(1 << 7));
-//   double r = (mcu.R[reg_r] / (double)(1 << 7));
-//   double res = d * r;
-//   uint16_t result = ;
-//   mcu.SREG.flags.C = (res >= 2);
-//   mcu.SREG.flags.Z = (result == 0);
-//   word_reg_set(0, (uint16_t)result);
-//   mcu.pc += 1;
-// }
-static inline void FMULS(uint32_t opcode);
-static inline void FMULSU(uint32_t opcode);
+static inline void FMUL(uint32_t opcode){
+  // 0000 0011 0ddd 1rrr
+  uint8_t reg_d = (opcode & 0x70) >> 4;
+  reg_d += 16;
+  uint8_t reg_r = (opcode & 0x7);
+  reg_r += 16;
+  double d = (mcu.R[reg_d] / (double)(1 << 7));
+  double r = (mcu.R[reg_r] / (double)(1 << 7));
+  double res = d * r;
+  uint16_t result = round(res * (1 << 14));
+  mcu.SREG.flags.C = b_get(result, 15) >> 15;
+  mcu.SREG.flags.Z = (result == 0);
+  result <<= 1;
+  word_reg_set(0, result);
+  mcu.pc += 1;
+}
+static inline void FMULS(uint32_t opcode){
+  // 0000 0011 1ddd 0rrr
+  uint8_t reg_d = (opcode & 0x70) >> 4;
+  reg_d += 16;
+  uint8_t reg_r = (opcode & 0x7);
+  reg_r += 16;
+  double d = ((int8_t)mcu.R[reg_d] / (double)(1 << 7));
+  double r = ((int8_t)mcu.R[reg_r] / (double)(1 << 7));
+  double res = d * r;
+  uint16_t result = round(res * (1 << 14));
+  mcu.SREG.flags.C = b_get(result, 15) >> 15;
+  mcu.SREG.flags.Z = (result == 0);
+  result <<= 1;
+  word_reg_set(0, result);
+  mcu.pc += 1;
+}
+static inline void FMULSU(uint32_t opcode){
+  // 0000 0011 1ddd 1rrr
+  uint8_t reg_d = (opcode & 0x70) >> 4;
+  reg_d += 16;
+  uint8_t reg_r = (opcode & 0x7);
+  reg_r += 16;
+  double d = ((int8_t)mcu.R[reg_d] / (double)(1 << 7));
+  double r = (mcu.R[reg_r] / (double)(1 << 7));
+  double res = d * r;
+  uint16_t result = round(res * (1 << 14));
+  mcu.SREG.flags.C = b_get(result, 15) >> 15;
+  mcu.SREG.flags.Z = (result == 0);
+  result <<= 1;
+  word_reg_set(0, result);
+  mcu.pc += 1;
+}
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
