@@ -779,16 +779,16 @@ static Instruction_t opcodes[] = {
   {"MUL", MUL, 0b1111110000000000, 0b1001110000000000, 2, 1},   //??1
   {"MULS", MULS, 0b1111111100000000, 0b0000001000000000, 2, 1}, //??1
   {"MULSU", MULSU, 0b1111111110001000, 0b0000001100000000, 2, 1},
-  {"FMUL", FMUL, 0b1111111110001000, 0b0000001100001000, 2, 1},
-  {"FMULS", FMULS, 0b1111111110001000, 0b0000001110000000, 2, 1},
-  {"FMULSU", FMULSU, 0b1111111110001000, 0b0000001110001000, 2, 1},
+  // {"FMUL", FMUL, 0b1111111110001000, 0b0000001100001000, 2, 1},
+  // {"FMULS", FMULS, 0b1111111110001000, 0b0000001110000000, 2, 1},
+  // {"FMULSU", FMULSU, 0b1111111110001000, 0b0000001110001000, 2, 1},
 
   {"RJMP", RJMP, 0b1111000000000000, 0b1100000000000000, 2, 1},
   {"IJMP", IJMP, 0b1111111111111111, 0b1001010000001001, 2, 1},
   {"JMP", JMP, 0b1111111000001110, 0b1001010000001100, 3, 2},
   {"RCALL", RCALL, 0b1111000000000000, 0b1101000000000000, 3, 1},
   {"ICALL", ICALL, 0b1111111111111111, 0b1001010100001001, 3, 1},
-  {"CALL", CALL, 0b1111111000001110, 0b1001010000001110, 4, 1},
+  {"CALL", CALL, 0b1111111000001110, 0b1001010000001110, 4, 2},
   {"RET", RET, 0b1111111111111111, 0b1001010100001000, 4, 1},
   {"RETI", RETI, 0b1111111111111111, 0b1001010100011000, 4, 1},
   {"CPSE", CPSE, 0b1111110000000000, 0b0001000000000000, 1, 1}, //2/3
@@ -884,7 +884,6 @@ void mcu_init(void) {
 void mcu_start(void) {
   while (true) {
     uint32_t opcode = get_opcode16();
-    // TO DO: check if it's a multi opcode instruction
     Instruction_t *instruction = mcu.opcode_lookup[opcode];
     if (mcu.skip_next) {
       mcu.pc += instruction->length;
@@ -937,9 +936,7 @@ bool mcu_load_file(const char *filename) {
     }
     line += 2;
     char *data_buffer = calloc(data_length * 2, sizeof(char));
-    for (int i = 0; i < data_length * 2; i++) {
-      data_buffer[i] = line[i];
-    }
+    memcpy(data_buffer, line, data_length * 2);
     for (int i = 0; i < data_length * 2; i += 4) {
       char low[3], high[3];
       memset(low, 0, 3);
