@@ -30,7 +30,7 @@ static int print(const char *format, ...) {
 #define b_get(number, n) (number & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 30)
+#define CLOCK_FREQ (SEC / 100)
 
 static void print_bits(uint32_t number) {
   char bits[35];
@@ -400,8 +400,8 @@ static inline void MOV(uint32_t opcode){
 }
 static inline void MOVW(uint32_t opcode){
   // 0000 0001 dddd rrrr
-  uint8_t reg_d = (opcode & 0xF0) >> 4;
-  uint8_t reg_r = (opcode & 0xF);
+  uint8_t reg_d = ((opcode & 0xF0) >> 4) * 2;
+  uint8_t reg_r = (opcode & 0xF) * 2;
   word_reg_set(reg_d, word_reg_get(reg_r));
   mcu.pc += 1;  
 }

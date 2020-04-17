@@ -34,6 +34,17 @@ int main(void) {
     ATmega328p_t mcu = mcu_get_copy();
     assert(mcu.R[16] == mcu.R[17]);
   )
+  run_test("MOVW",
+    execute(
+      "LDI R20, 5\n"
+      "LDI R21, 10\n"
+      "MOVW R31:R30, R21:R20\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[30] == 5);
+    assert(mcu.R[31] == 10);
+  )
   run_test("RJMP", 
     execute(
       "LDI r23, 0\n"
@@ -72,6 +83,19 @@ int main(void) {
     ATmega328p_t mcu = mcu_get_copy();
     assert(mcu.R[23] == 55);
     assert(mcu.pc == 9);
+  )
+  run_test("RCALL and RET",
+    execute(
+      "LDI R20, 5\n"
+      "RCALL routine\n"
+      "JMP halt\n"
+      "routine: LDI R20, 10\n"
+      "RET\n"
+      "halt: NOP\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[20] == 10);
   )
   tests_summary();
   return 0;
