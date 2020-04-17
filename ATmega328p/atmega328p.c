@@ -507,7 +507,7 @@ static inline void CPSE(uint32_t opcode) {
   // Compare, skip if equal
   uint16_t r = (opcode & 0xF) | (b_get(opcode, 9) >> 5);
   uint16_t d = (opcode & 0b111110000) >> 4;
-  if (r == d) {
+  if (mcu.R[r] == mcu.R[d]) {
     mcu.skip_next = true;
   }
   mcu.pc += 1;
