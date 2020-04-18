@@ -417,11 +417,11 @@ static inline void LDI(uint32_t opcode){
 //-----------
 static inline void IN(uint32_t opcode){
   // 1011 0AAd dddd AAAA
-  // uint8_t reg_d = (opcode & 0xF0) >> 4;
-  // reg_d |= b_get(opcode, 8) >> 4;
-  // uint8_t a = (opcode & 0xF) | (opcode & 0x600) >> 5;
-  
-  // mcu.pc += 1;  
+  uint8_t reg_d = (opcode & 0xF0) >> 4;
+  reg_d |= b_get(opcode, 8) >> 4;
+  uint8_t a = (opcode & 0xF) | ((opcode & 0x600) >> 5);
+  mcu.R[reg_d] = mcu.IO[a];
+  mcu.pc += 1;  
 }
 static inline void OUT(uint32_t opcode);
 static inline void PUSH(uint32_t opcode){
