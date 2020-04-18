@@ -170,6 +170,81 @@ int main(void) {
     );
     assert(mcu_get_copy().R[21] == 5);
   )
+  run_test("SBRC and SBRS",
+    execute(
+      "LDI R21, 5\n"
+      "LDI R20, 0xFF\n"
+      "SBRC R20, 5\n"
+      "SBRS R20, 5\n"
+      "LDI R21, 10\n"
+      "LDI R20, 0\n"
+      "SBRC R20, 3\n"
+      "LDI R21, 10\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[21] == 5);
+  )
+  // TO DO: implement OUT? to write to IO registers
+  // run_test("SBIC and SBIS",
+    
+  // )
+  run_test("BRBS and BRBC",
+    execute(
+      "LDI R20, 5\n"
+      "LDI R21, 5\n"
+      "CLI\n"
+      "BRBS 7, fail\n"
+      "SEI\n"
+      "BRBC 7, fail\n"
+      "BRBS 7, continue\n"
+      "JMP fail\n"
+      "fail: LDI R20, 10\n"
+      "BREAK\n"
+      "continue: LDI R21, 15\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[20] == 5);
+    assert(mcu.R[21] == 15);
+  )
+  run_test("SWAP",
+    execute(
+      "LDI R20, 0xFA\n"
+      "SWAP R20\n"
+      "BREAK"
+    );
+    assert(mcu_get_copy().R[20] == 0xAF);
+  )
+  run_test("BSET and BCLR",
+    execute(
+      "BSET 7\n"
+      "BREAK\n"
+      "BCLR 7\n"
+      "BREAK\n"
+      "BSET 7\n"
+      "BREAK"
+    );
+    assert(mcu_get_copy().SREG.flags.I == 1);
+    mcu_resume();
+    assert(mcu_get_copy().SREG.flags.I == 0);
+    mcu_resume();
+    assert(mcu_get_copy().SREG.flags.I == 1);
+  )
+  run_test("BST and BLD",
+    execute(
+      "BCLR 1\n" // clear T
+      "LDI R20, 1\n" // T = R20(0)
+      "BST R20, 0\n" // T = R20(0)
+      "BREAK\n"
+      "LDI R21, 0\n"
+      "BLD R21, 0\n" // R21(0) = T
+      "BREAK"
+    );
+    assert(mcu_get_copy().SREG.flags.T == 1);
+    mcu_resume();
+    assert(mcu_get_copy().R[21] == 1);
+  )
   tests_summary();
   return 0;
 }

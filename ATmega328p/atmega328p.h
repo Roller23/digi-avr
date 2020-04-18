@@ -21,14 +21,14 @@ typedef uint16_t word;
 typedef union {
   // Status register flags
   struct {
-    bit I : 1; // Interrupt enable
-    bit T : 1; // Copy storage
-    bit H : 1; // Half carry
-    bit S : 1; // Sign
-    bit V : 1; // Overflow
-    bit N : 1; // Negative
-    bit Z : 1; // Zero
     bit C : 1; // Carry
+    bit Z : 1; // Zero
+    bit N : 1; // Negative
+    bit V : 1; // Overflow
+    bit S : 1; // Sign
+    bit H : 1; // Half carry
+    bit T : 1; // Copy storage
+    bit I : 1; // Interrupt enable
   } flags;
   byte value;
 } SREG_t;

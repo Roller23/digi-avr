@@ -718,7 +718,7 @@ static inline void BST(uint32_t opcode) {
   // 1111 101d dddd 0bbb
   // T = R[d](b)
   uint8_t b = opcode & 0b111;
-  uint8_t d = (opcode & 0b11111) >> 4;
+  uint8_t d = (opcode & 0b111110000) >> 4;
   mcu.SREG.flags.T = !!b_get(mcu.R[d], b);
   mcu.pc += 1;
 }
@@ -727,7 +727,7 @@ static inline void BLD(uint32_t opcode) {
   // 1111 100d dddd 0bbb
   // R[d](b) = T
   uint8_t b = opcode & 0b111;
-  uint8_t d = (opcode & 0b11111) >> 4;
+  uint8_t d = (opcode & 0b111110000) >> 4;
   mcu.R[d] |= ((!!mcu.SREG.flags.T) << b);
   mcu.pc += 1;
 }
