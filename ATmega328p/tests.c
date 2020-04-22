@@ -8,7 +8,7 @@ static void execute(const char *code) {
   if (!mcu_load_code(code)) {
     exit(EXIT_FAILURE);
   }
-  mcu_start();
+  mcu_run();
 }
 
 int main(void) {

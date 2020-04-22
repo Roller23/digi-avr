@@ -881,33 +881,36 @@ void mcu_init(void) {
   create_lookup_table();
 }
 
-void mcu_start(void) {
-  while (true) {
-    uint32_t opcode = get_opcode16();
-    Instruction_t *instruction = mcu.opcode_lookup[opcode];
-    if (mcu.skip_next) {
-      mcu.pc += instruction->length;
-      mcu.skip_next = false;
-      continue;
-    }
-    print("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
-    if (instruction->length == 2) {
-      opcode = get_opcode32();
-    }
-    instruction->function(opcode);
-    for (int i = 0; i < instruction->cycles; i++) {
-      usleep(CLOCK_FREQ);
-    }
-    if (mcu.stopped) {
-      break;
-    }
+bool mcu_execute_cycle(void) {
+  if (mcu.cycles > 0) {
+    usleep(CLOCK_FREQ);
+    mcu.cycles--;
+    return true;
   }
+  uint32_t opcode = get_opcode16();
+  Instruction_t *instruction = mcu.opcode_lookup[opcode];
+  if (mcu.skip_next) {
+    mcu.pc += instruction->length;
+    mcu.skip_next = false;
+    return true;
+  }
+  print("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
+  if (instruction->length == 2) {
+    opcode = get_opcode32();
+  }
+  instruction->function(opcode);
+  mcu.cycles = ((instruction->cycles || 1) - 1); // BREAK
+  return !mcu.stopped;
+}
+
+void mcu_run(void) {
+  while (mcu_execute_cycle());
 }
 
 void mcu_resume(void) {
   mcu.stopped = false;
   mcu.pc += 1; // skip BREAK
-  mcu_start();
+  mcu_run();
 }
 
 bool mcu_load_file(const char *filename) {
@@ -967,7 +970,10 @@ bool mcu_load_code(const char *code) {
   }
   fputs(code, file);
   fclose(file);
-  system("avra _t.asm > /dev/null");
+  int status = system("avra _t.asm > /dev/null");
+  if (status == -1) {
+    return false;
+  }
   bool loaded = mcu_load_file("_t.hex");
   char *files[] = {"_t.asm", "_t.hex", "_t.obj", "_t.eep.hex", "_t.cof"};
   for (int i = 0; i < sizeof(files) / sizeof(char *); i++) {

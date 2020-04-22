@@ -73,6 +73,7 @@ typedef struct {
   bool skip_next;
   bool sleeping;
   bool stopped;
+  uint16_t cycles;
   Instruction_t *opcode_lookup[LOOKUP_SIZE];
 } ATmega328p_t;
 
@@ -80,7 +81,8 @@ typedef struct {
 void mcu_init(void);
 bool mcu_load_file(const char *filename);
 bool mcu_load_code(const char *code);
-void mcu_start(void);
+void mcu_run(void);
+bool mcu_execute_cycle(void);
 void mcu_resume(void);
 ATmega328p_t mcu_get_copy(void);
 
