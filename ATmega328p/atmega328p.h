@@ -74,6 +74,8 @@ typedef struct {
   bool sleeping;
   bool stopped;
   uint16_t cycles;
+  uint32_t opcode;
+  Instruction_t *instruction;
   Instruction_t *opcode_lookup[LOOKUP_SIZE];
 } ATmega328p_t;
 

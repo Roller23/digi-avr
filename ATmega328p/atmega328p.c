@@ -887,19 +887,19 @@ bool mcu_execute_cycle(void) {
     mcu.cycles--;
     return true;
   }
-  uint32_t opcode = get_opcode16();
-  Instruction_t *instruction = mcu.opcode_lookup[opcode];
+  mcu.opcode = get_opcode16();
+  mcu.instruction = mcu.opcode_lookup[mcu.opcode];
   if (mcu.skip_next) {
-    mcu.pc += instruction->length;
+    mcu.pc += mcu.instruction->length;
     mcu.skip_next = false;
     return true;
   }
-  print("Executing %s, cycles: %d\n", instruction->name, instruction->cycles);
-  if (instruction->length == 2) {
-    opcode = get_opcode32();
+  print("Executing %s, cycles: %d\n", mcu.instruction->name, mcu.instruction->cycles);
+  if (mcu.instruction->length == 2) {
+    mcu.opcode = get_opcode32();
   }
-  instruction->function(opcode);
-  mcu.cycles = ((instruction->cycles || 1) - 1); // BREAK
+  mcu.instruction->function(mcu.opcode);
+  mcu.cycles = ((mcu.instruction->cycles || 1) - 1); // BREAK
   return !mcu.stopped;
 }
 
