@@ -900,8 +900,9 @@ bool mcu_execute_cycle(void) {
     mcu.opcode = get_opcode32();
   }
   mcu.instruction->execute(mcu.opcode);
-  mcu.cycles = ((mcu.instruction->cycles ? mcu.instruction->cycles : 1) - 1); // BREAK
+  mcu.cycles = (mcu.instruction->cycles - 1);
   if (mcu.stopped) {
+    mcu.cycles = 0; // fix BREAK
     return false;
   }
   usleep(CLOCK_FREQ);
