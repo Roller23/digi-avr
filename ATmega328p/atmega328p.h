@@ -51,7 +51,7 @@ typedef union {
 
 typedef struct {
   char *name;
-  void (*function)(uint32_t opcode);
+  void (*execute)(uint32_t opcode);
   uint16_t mask1; // 1 for all fixed bits, 0 for variables
   uint16_t mask2; // 1 for all fixed 1s, 0 for all fixed 0s and variables
   uint16_t cycles;

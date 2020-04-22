@@ -883,6 +883,7 @@ void mcu_init(void) {
 
 bool mcu_execute_cycle(void) {
   if (mcu.cycles > 0) {
+    print("Executing...\n");
     usleep(CLOCK_FREQ);
     mcu.cycles--;
     return true;
@@ -898,9 +899,13 @@ bool mcu_execute_cycle(void) {
   if (mcu.instruction->length == 2) {
     mcu.opcode = get_opcode32();
   }
-  mcu.instruction->function(mcu.opcode);
-  mcu.cycles = ((mcu.instruction->cycles || 1) - 1); // BREAK
-  return !mcu.stopped;
+  mcu.instruction->execute(mcu.opcode);
+  mcu.cycles = ((mcu.instruction->cycles ? mcu.instruction->cycles : 1) - 1); // BREAK
+  if (mcu.stopped) {
+    return false;
+  }
+  usleep(CLOCK_FREQ);
+  return true;
 }
 
 void mcu_run(void) {
