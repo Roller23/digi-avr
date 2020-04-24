@@ -30,7 +30,7 @@ static int print(const char *format, ...) {
 #define b_get(number, n) (number & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 100)
+#define CLOCK_FREQ (SEC / 500)
 
 static void print_bits(uint32_t number) {
   char bits[35];
@@ -403,7 +403,7 @@ static inline void MOVW(uint32_t opcode){
   uint8_t reg_d = ((opcode & 0xF0) >> 4) * 2;
   uint8_t reg_r = (opcode & 0xF) * 2;
   word_reg_set(reg_d, word_reg_get(reg_r));
-  mcu.pc += 1;  
+  mcu.pc += 1;
 }
 static inline void LDI(uint32_t opcode){
   // 1110 kkkk dddd kkkk
@@ -423,7 +423,13 @@ static inline void IN(uint32_t opcode){
   mcu.R[reg_d] = mcu.IO[a];
   mcu.pc += 1;  
 }
-static inline void OUT(uint32_t opcode);
+static inline void OUT(uint32_t opcode) {
+  // 1011 1AAr rrrr AAAA
+  uint8_t reg_r = (opcode & 0b111110000) >> 4;
+  uint8_t a = (opcode & 0xF) | ((opcode & 0b11000000000) >> 5);
+  mcu.IO[a] = mcu.R[reg_r];
+  mcu.pc += 1;
+}
 static inline void PUSH(uint32_t opcode){
   // 1001 001d dddd 1111
   uint8_t reg_d = (opcode & 0xF0) >> 4;
@@ -825,8 +831,8 @@ static Instruction_t opcodes[] = {
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
 
   // //....
-  // {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
-  // {"OUT", OUT, 0b1111100000000000, 0b1011100000000000, 1, 1},
+  {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
+  {"OUT", OUT, 0b1111100000000000, 0b1011100000000000, 1, 1},
   {"PUSH", PUSH, 0b1111111000001111, 0b1001001000001111, 2, 1},
   {"POP", POP, 0b1111111000001111, 0b1001000000001111, 2, 1},
 

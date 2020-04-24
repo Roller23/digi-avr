@@ -45,6 +45,37 @@ int main(void) {
     assert(mcu.R[30] == 5);
     assert(mcu.R[31] == 10);
   )
+  run_test("OUT",
+    execute(
+      "LDI R20, 15\n"
+      "OUT 10, R20\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.IO[10] == 15);
+  )
+  run_test("IN",
+    execute(
+      "LDI R20, 15\n"
+      "OUT 10, R20\n"
+      "IN R23, 10\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[23] == 15);
+  )
+  run_test("SER",
+    execute(
+      "LDI R20, 0\n"
+      "LDI R23, 0\n"
+      "SER R20\n"
+      "SER R23\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[20] == 0xFF);
+    assert(mcu.R[23] == 0xFF);
+  )
   run_test("BCLR and BSET",
     execute(
       "BSET 0\n"
@@ -158,6 +189,21 @@ int main(void) {
     );
     assert(mcu_get_copy().SREG.flags.I == 1);
   )
+  run_test("PUSH and POP",
+    execute(
+      "LDI R20, 0\n"
+      "call function\n"
+      "JMP halt\n"
+      "function: LDI R21, 10\n"
+      "PUSH R21\n"
+      "POP R20\n"
+      "RET\n"
+      "halt: NOP\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[20] == 10);
+  )
   run_test("CPSE",
     execute(
       "LDI R20, 5\n"
@@ -185,10 +231,41 @@ int main(void) {
     ATmega328p_t mcu = mcu_get_copy();
     assert(mcu.R[21] == 5);
   )
-  // TO DO: implement OUT? to write to IO registers
-  // run_test("SBIC and SBIS",
-    
-  // )
+  run_test("SBI and CBI",
+    execute(
+      "LDI R20, 0\n"
+      "OUT 10, R20\n"
+      "SBI 10, 0\n"
+      "BREAK\n"
+      "LDI R20, 0xFF\n"
+      "OUT 11, R20\n"
+      "CBI 11, 5\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.IO[10] == 1);
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.IO[11] == 0b11011111);
+  )
+  run_test("SBIC and SBIS",
+    execute(
+      "LDI R23, 123\n"
+      "LDI R20, 0xFF\n"
+      "LDI R21, 0\n"
+      "OUT 10, R20\n"
+      "OUT 11, R21\n"
+      "CBI 10, 5\n"
+      "SBI 11, 3\n"
+      "SBIC 10, 5\n"
+      "LDI R23, 0\n"
+      "SBIS 11, 3\n"
+      "LDI R23, 0\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[23] == 123);
+  )
   run_test("BRBS and BRBC",
     execute(
       "LDI R20, 5\n"
