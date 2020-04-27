@@ -46,6 +46,7 @@ static void print_bits(uint32_t number) {
 }
 
 static ATmega328p_t mcu;
+static Instruction_t *opcode_lookup[LOOKUP_SIZE];
 
 static inline void ADD(uint32_t opcode) {
   // 0000 11rd dddd rrrr
@@ -864,7 +865,7 @@ static uint32_t get_opcode32(void) {
 
 static void create_lookup_table(void) {
   for (int i = 0; i < LOOKUP_SIZE; i++) {
-    mcu.opcode_lookup[i] = find_instruction(i);
+    opcode_lookup[i] = find_instruction(i);
   }
 }
 
@@ -895,7 +896,7 @@ bool mcu_execute_cycle(void) {
     return true;
   }
   mcu.opcode = get_opcode16();
-  mcu.instruction = mcu.opcode_lookup[mcu.opcode];
+  mcu.instruction = opcode_lookup[mcu.opcode];
   if (mcu.skip_next) {
     mcu.pc += mcu.instruction->length;
     mcu.skip_next = false;

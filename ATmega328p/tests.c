@@ -51,8 +51,7 @@ int main(void) {
       "OUT 10, R20\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.IO[10] == 15);
+    assert(mcu_get_copy().IO[10] == 15);
   )
   run_test("IN",
     execute(
@@ -61,8 +60,7 @@ int main(void) {
       "IN R23, 10\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[23] == 15);
+    assert(mcu_get_copy().R[23] == 15);
   )
   run_test("SER",
     execute(
@@ -124,8 +122,7 @@ int main(void) {
       "LDI R23, 13\n"
       "BREAK" // 4
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.pc == 4);
+    assert(mcu_get_copy().pc == 4);
   )
   run_test("JMP",
     execute(
@@ -153,8 +150,7 @@ int main(void) {
       "halt: NOP\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[20] == 10);
+    assert(mcu_get_copy().R[20] == 10);
   )
   run_test("ICALL and RET",
     execute(
@@ -167,8 +163,7 @@ int main(void) {
       "halt: NOP\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[20] == 10);
+    assert(mcu_get_copy().R[20] == 10);
   )
   run_test("RCALL and RET",
     execute(
@@ -180,8 +175,7 @@ int main(void) {
       "halt: NOP\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[20] == 10);
+    assert(mcu_get_copy().R[20] == 10);
   )
   run_test("RETI",
     execute(
@@ -193,8 +187,7 @@ int main(void) {
       "halt: NOP\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.SREG.flags.I == 1);
+    assert(mcu_get_copy().SREG.flags.I == 1);
   )
   run_test("PUSH and POP",
     execute(
@@ -208,8 +201,7 @@ int main(void) {
       "halt: NOP\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[20] == 10);
+    assert(mcu_get_copy().R[20] == 10);
   )
   run_test("CPSE",
     execute(
@@ -221,8 +213,7 @@ int main(void) {
       "LDI R21, 30\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[21] == 5);
+    assert(mcu_get_copy().R[21] == 5);
   )
   run_test("SBRC and SBRS",
     execute(
@@ -236,8 +227,7 @@ int main(void) {
       "LDI R21, 10\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[21] == 5);
+    assert(mcu_get_copy().R[21] == 5);
   )
   run_test("SBI and CBI",
     execute(
@@ -271,8 +261,7 @@ int main(void) {
       "LDI R23, 0\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[23] == 123);
+    assert(mcu_get_copy().R[23] == 123);
   )
   run_test("BRBS and BRBC",
     execute(
@@ -299,8 +288,7 @@ int main(void) {
       "SWAP R20\n"
       "BREAK"
     );
-    ATmega328p_t mcu = mcu_get_copy();
-    assert(mcu.R[20] == 0xAF);
+    assert(mcu_get_copy().R[20] == 0xAF);
   )
   run_test("BSET and BCLR",
     execute(
