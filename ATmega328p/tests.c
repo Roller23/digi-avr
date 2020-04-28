@@ -335,11 +335,13 @@ int main(void) {
       "BREAK"
     );
     ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[26] == 1); // low byte of the X register
     assert(mcu.R[0] == 10);
     assert(mcu.R[1] == 10);
     mcu_resume();
     mcu = mcu_get_copy();
     assert(mcu.R[0] == 15);
+    assert(mcu.R[26] == 0);
   )
   tests_summary();
   return 0;

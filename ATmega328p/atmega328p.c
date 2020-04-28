@@ -421,18 +421,18 @@ static inline void ST(uint32_t opcode){
   // (iii) 1001 001r rrrr 1110
   uint8_t r = (opcode & 0b111110000) >> 4;
   uint8_t version = opcode & 0b11;
-  uint16_t Z = Z_reg_get();
+  uint16_t X = X_reg_get();
   if (version == 0) {
     // X unchanged
-    mcu.data_memory[Z] = mcu.R[r];
+    mcu.data_memory[X] = mcu.R[r];
   } else if (version == 1) {
     // X post incremented
-    mcu.data_memory[Z] = mcu.R[r];
-    Z_reg_set(Z + 1);
+    mcu.data_memory[X] = mcu.R[r];
+    X_reg_set(X + 1);
   } else {
     // X Pre decremented
-    Z_reg_set(Z - 1);
-    mcu.data_memory[Z - 1] = mcu.R[r];
+    X_reg_set(X - 1);
+    mcu.data_memory[X - 1] = mcu.R[r];
   }
   mcu.pc += 1;
 }
