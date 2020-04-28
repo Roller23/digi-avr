@@ -19,6 +19,11 @@ int main(void) {
   mcu_load_code(
     "LDI R20, 5\n"
     "LDI R23, 15\n"
+    "CALL function\n"
+    "JMP halt\n"
+    "function: ADD R23, R20, R24\n"
+    "RET\n"
+    "halt: NOP\n"
     "BREAK"
   );
   while (true) {

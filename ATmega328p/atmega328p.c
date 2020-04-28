@@ -415,6 +415,26 @@ static inline void LDI(uint32_t opcode){
   mcu.R[reg_d] = k;
   mcu.pc += 1;  
 }
+static inline void ST(uint32_t opcode){
+  // (i)   1001 001r rrrr 1100
+  // (ii)  1001 001r rrrr 1101
+  // (iii) 1001 001r rrrr 1110
+  uint8_t r = (opcode & 0b111110000) >> 4;
+  uint8_t version = opcode & 0b11;
+  uint16_t Z = Z_reg_get();
+  if (version == 0) {
+    // X unchanged
+    mcu.data_memory[Z] = mcu.R[r];
+  } else if (version == 1) {
+    // X post incremented
+    mcu.data_memory[Z] = mcu.R[r];
+    Z_reg_set(Z + 1);
+  } else if (version == 2) {
+    // X Pre decremented
+    Z_reg_set(Z - 1);
+    mcu.data_memory[Z] = mcu.R[r];
+  }
+}
 //-----------
 static inline void IN(uint32_t opcode){
   // 1011 0AAd dddd AAAA
@@ -824,9 +844,9 @@ static Instruction_t opcodes[] = {
   {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
   {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 1, 1}, //???1
 
-  // {"ST", ST, 0b1111111000001111, 0b1001001000001100, 1, 1},
-  // {"ST", ST, 0b1111111000001111, 0b1001001000001101, 1, 1},
-  // {"ST", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
+  {"ST", ST, 0b1111111000001111, 0b1001001000001100, 2, 1},
+  {"ST", ST, 0b1111111000001111, 0b1001001000001101, 2, 1},
+  {"ST", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
 
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
