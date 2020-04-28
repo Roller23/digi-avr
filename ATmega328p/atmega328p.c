@@ -429,11 +429,12 @@ static inline void ST(uint32_t opcode){
     // X post incremented
     mcu.data_memory[Z] = mcu.R[r];
     Z_reg_set(Z + 1);
-  } else if (version == 2) {
+  } else {
     // X Pre decremented
     Z_reg_set(Z - 1);
-    mcu.data_memory[Z] = mcu.R[r];
+    mcu.data_memory[Z - 1] = mcu.R[r];
   }
+  mcu.pc += 1;
 }
 //-----------
 static inline void IN(uint32_t opcode){
@@ -774,7 +775,6 @@ static inline void WDR(uint32_t opcode) {
 }
 
 static inline void BREAK(uint32_t opcode) {
-  print("Break encountered\n");
   mcu.stopped = true;
 }
 
@@ -844,9 +844,9 @@ static Instruction_t opcodes[] = {
   {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
   {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 1, 1}, //???1
 
-  {"ST", ST, 0b1111111000001111, 0b1001001000001100, 2, 1},
-  {"ST", ST, 0b1111111000001111, 0b1001001000001101, 2, 1},
-  {"ST", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
+  {"ST X", ST, 0b1111111000001111, 0b1001001000001100, 2, 1},
+  {"ST X+", ST, 0b1111111000001111, 0b1001001000001101, 2, 1},
+  {"ST -X", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
 
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},

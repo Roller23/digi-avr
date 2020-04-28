@@ -324,6 +324,23 @@ int main(void) {
     mcu = mcu_get_copy();
     assert(mcu.R[21] == 1);
   )
+  run_test("ST",
+    execute(
+      "LDI R20, 10\n"
+      "ST X+, R20\n"
+      "ST X, R20\n"
+      "BREAK\n"
+      "LDI R20, 15\n"
+      "ST -X, R20\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[0] == 10);
+    assert(mcu.R[1] == 10);
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[0] == 15);
+  )
   tests_summary();
   return 0;
 }
