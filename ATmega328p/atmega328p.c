@@ -490,6 +490,81 @@ static inline void ST_Z(uint32_t opcode) {
   }
   mcu.pc += 1;
 }
+static inline void LD_X(uint32_t opcode){
+  // (i)   1001 000d dddd 1100
+  // (ii)  1001 000d dddd 1101
+  // (iii) 1001 000d dddd 1110
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  uint8_t version = opcode & 0b11;
+  uint16_t X = X_reg_get();
+  if (version == 0) {
+    // X unchanged
+    mcu.R[d] = mcu.data_memory[X];
+  } else if (version == 1) {
+    // X post incremented
+    mcu.R[d] = mcu.data_memory[X];
+    X_reg_set(X + 1);
+  } else {
+    // X Pre decremented
+    X_reg_set(X - 1);
+    mcu.R[d] = mcu.data_memory[X - 1];
+  }
+  mcu.pc += 1;
+}
+static inline void LD_Y(uint32_t opcode) {
+  // (i)   1000 000d dddd 1000
+  // (ii)  1001 000d dddd 1001
+  // (iii) 1001 000d dddd 1010
+  // (iv)  10q0 qq0d dddd 1qqq
+  uint8_t version = opcode & 0b11;
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  uint8_t q = (opcode & 0b111) | ((opcode & 0b110000000000) >> 7);
+  q |= b_get(opcode, 13) >> 8;
+  uint16_t Y = Y_reg_get();
+  if (q > 2) {
+    // with q displacement
+    mcu.R[d] = mcu.data_memory[Y + q];
+  } else if (version == 0) {
+    // Y unchanged
+    mcu.R[d] = mcu.data_memory[Y];
+  } else if (version == 1) {
+    // Y post incremented
+    mcu.R[d] = mcu.data_memory[Y];
+    Y_reg_set(Y + 1);
+  } else {
+    // Y pre decremented
+    Y_reg_set(Y - 1);
+    mcu.R[d] = mcu.data_memory[Y - 1];
+  }
+  mcu.pc += 1;
+}
+static inline void LD_Z(uint32_t opcode) {
+  // (i)   1000 001d dddd 0000
+  // (ii)  1001 001d dddd 0001
+  // (iii) 1001 001d dddd 0010
+  // (iv)  10q0 qq1d dddd 0qqq
+  uint8_t version = opcode & 0b11;
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  uint8_t q = (opcode & 0b111) | ((opcode & 0b110000000000) >> 7);
+  q |= b_get(opcode, 13) >> 8;
+  uint16_t Z = Z_reg_get();
+  if (q > 2) {
+    // with q displacement
+    mcu.R[d] = mcu.data_memory[Z + q];
+  } else if (version == 0) {
+    // Y unchanged
+    mcu.R[d] = mcu.data_memory[Z];
+  } else if (version == 1) {
+    // Y post incremented
+    mcu.R[d] = mcu.data_memory[Z];
+    Z_reg_set(Z + 1);
+  } else {
+    // Y pre decremented
+    Z_reg_set(Z - 1);
+    mcu.R[d] = mcu.data_memory[Z - 1];
+  }
+  mcu.pc += 1;
+}
 static inline void SPM(uint32_t opcode){
   // 1001 0101 1110 1000
   *((uint16_t *)(mcu.program_memory + Z_reg_get())) = word_reg_get(0);
@@ -907,19 +982,32 @@ static Instruction_t opcodes[] = {
   {"ST X+", ST_X, 0b1111111000001111, 0b1001001000001101, 2, 1},
   {"ST -X", ST_X, 0b1111111000001111, 0b1001001000001110, 2, 1},
 
-  {"ST Y", ST_Y, 0b1111111000001111, 0b1001001000001000, 2, 1},
+  {"ST Y", ST_Y, 0b1111111000001111, 0b1000001000001000, 2, 1},
   {"ST Y+", ST_Y, 0b1111111000001111, 0b1001001000001001, 2, 1},
   {"ST -Y", ST_Y, 0b1111111000001111, 0b1001001000001010, 2, 1},
   {"STD Y", ST_Y, 0b1101001000001000, 0b1000001000001000, 2, 1},
 
-  {"ST Z", ST_Z, 0b1111111000001111, 0b1001001000000000, 2, 1},
+  {"ST Z", ST_Z, 0b1111111000001111, 0b1000001000000000, 2, 1},
   {"ST Z+", ST_Z, 0b1111111000001111, 0b1001001000000001, 2, 1},
   {"ST -Z", ST_Z, 0b1111111000001111, 0b1001001000000010, 2, 1},
   {"STD Z", ST_Z, 0b1101001000001000, 0b1000001000000000, 2, 1},
 
-  {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
+  {"LD X", LD_X, 0b1111111000001111, 0b1001000000001100, 1, 1},
+  {"LD X+", LD_X, 0b1111111000001111, 0b1001000000001101, 2, 1},
+  {"LD -X", LD_X, 0b1111111000001111, 0b1001000000001110, 3, 1},
 
-  // //....
+  {"LD Y", LD_Y, 0b1111111000001111, 0b1000000000001000, 2, 1},
+  {"LD Y+", LD_Y, 0b1111111000001111, 0b1001000000001001, 2, 1},
+  {"LD -Y", LD_Y, 0b1111111000001111, 0b1001000000001010, 2, 1},
+  {"LDD Y", LD_Y, 0b1101001000001000, 0b1000000000001000, 2, 1},
+
+  {"LD Z", LD_Z, 0b1111111000001111, 0b1000000000000000, 2, 1},
+  {"LD Z+", LD_Z, 0b1111111000001111, 0b1001000000000001, 2, 1},
+  {"LD -Z", LD_Z, 0b1111111000001111, 0b1001000000000010, 2, 1},
+  {"LDD Z", LD_Z, 0b1101001000001000, 0b1000000000000000, 2, 1},
+
+  {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 5, 1},
+
   {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
   {"OUT", OUT, 0b1111100000000000, 0b1011100000000000, 1, 1},
   {"PUSH", PUSH, 0b1111111000001111, 0b1001001000001111, 2, 1},
