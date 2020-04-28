@@ -13,7 +13,7 @@ typedef uint16_t word;
 #define IO_REGISTER_COUNT 64
 #define EXT_IO_REGISTER_COUNT 160
 #define DATA_MEMORY_SIZE 0x0900
-#define MEMORY_SIZE (32 * KB)
+#define PROGRAM_MEMORY_SIZE (32 * KB)
 #define RAM_SIZE (2 * KB)
 #define KB 1024
 #define LOOKUP_SIZE 0xFFFF
@@ -63,7 +63,8 @@ typedef struct {
   MCUSR_t SR; // MCU status register
   byte data_memory[DATA_MEMORY_SIZE]; // contains registers and RAM, allows various addressing modes
   byte ROM[KB];
-  byte memory[MEMORY_SIZE];
+  byte program_memory[PROGRAM_MEMORY_SIZE];
+  byte *boot_section;
   byte *R; // General purpose registers
   byte *IO; // IO registers
   byte *ext_IO; // External IO registers

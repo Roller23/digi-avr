@@ -393,6 +393,23 @@ int main(void) {
     assert(mcu.R[0] == 5);
     assert(mcu.R[30] == 0);
   )
+  run_test("SPM",
+    // overwrite NOP by 0xE005
+    execute(
+      // store 0xE005 to R0:R1
+      "LDI R20, 0x0005\n"
+      "LDI R21, 0x00E0\n"
+      "ST Z+, R20\n"
+      "ST Z, R21\n"
+      // store NOP address
+      "LDI R30, 12\n"
+      "SPM\n"
+      "NOP\n" // should be overwritten by SPM to 'LDI R16, 5'
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[16] == 5);
+  )
   tests_summary();
   return 0;
 }

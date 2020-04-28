@@ -490,6 +490,11 @@ static inline void ST_Z(uint32_t opcode) {
   }
   mcu.pc += 1;
 }
+static inline void SPM(uint32_t opcode){
+  // 1001 0101 1110 1000
+  *((uint16_t *)(mcu.program_memory + Z_reg_get())) = word_reg_get(0);
+  mcu.pc += 1;
+}
 //-----------
 static inline void IN(uint32_t opcode){
   // 1011 0AAd dddd AAAA
@@ -912,8 +917,7 @@ static Instruction_t opcodes[] = {
   {"ST -Z", ST_Z, 0b1111111000001111, 0b1001001000000010, 2, 1},
   {"STD Z", ST_Z, 0b1101001000001000, 0b1000001000000000, 2, 1},
 
-  // {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
-  // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
+  {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
 
   // //....
   {"IN", IN, 0b1111100000000000, 0b1011000000000000, 1, 1},
@@ -932,19 +936,19 @@ static Instruction_t opcodes[] = {
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
 static uint16_t get_opcode16(void) {
-  if ((mcu.pc + 1) * WORD_SIZE >= MEMORY_SIZE - 1) {
+  if ((mcu.pc + 1) * WORD_SIZE >= PROGRAM_MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
   }
-  return *((uint16_t *)(mcu.memory + mcu.pc * WORD_SIZE));
+  return *((uint16_t *)(mcu.program_memory + mcu.pc * WORD_SIZE));
 }
 
 static uint32_t get_opcode32(void) {
-  if ((mcu.pc + 2) * WORD_SIZE  >= MEMORY_SIZE - 1) {
+  if ((mcu.pc + 2) * WORD_SIZE  >= PROGRAM_MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
   }
-  return (get_opcode16() << 16) | *(uint16_t *)(mcu.memory + (mcu.pc + 1) * WORD_SIZE);
+  return (get_opcode16() << 16) | *(uint16_t *)(mcu.program_memory + (mcu.pc + 1) * WORD_SIZE);
 }
 
 static void create_lookup_table(void) {
@@ -964,6 +968,7 @@ static Instruction_t *find_instruction(uint16_t opcode) {
 
 void mcu_init(void) {
   memset(&mcu, 0, sizeof(mcu));
+  mcu.boot_section = &mcu.program_memory[PROGRAM_MEMORY_SIZE];
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
@@ -1044,13 +1049,13 @@ bool mcu_load_file(const char *filename) {
       sscanf(data_buffer + i, "%2s", low);
       sscanf(data_buffer + i + 2, "%2s", high);
       uint16_t word = ((uint16_t)strtol(high, 0, 16) << 8) | (uint16_t)strtol(low, 0, 16);
-      if (memory_index >= MEMORY_SIZE) {
+      if (memory_index >= PROGRAM_MEMORY_SIZE) {
         print("Cannot fit the whole program in memory\n");
         free(data_buffer);
         return false;
       }
       print("Writing 0x%.4X to memory\n", word);
-      memcpy(mcu.memory + memory_index, &word, sizeof(word));
+      memcpy(mcu.program_memory + memory_index, &word, sizeof(word));
       memory_index += sizeof(word);
     }
     free(data_buffer);

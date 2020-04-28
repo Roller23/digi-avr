@@ -113,7 +113,6 @@ static inline void LDS(uint32_t opcode);
 static inline void ST_X(uint32_t opcode);
 static inline void ST_Y(uint32_t opcode);
 static inline void ST_Z(uint32_t opcode);
-static inline void STD(uint32_t opcode);
 static inline void STS(uint32_t opcode);
 static inline void LPM(uint32_t opcode);
 static inline void SPM(uint32_t opcode); //!!
