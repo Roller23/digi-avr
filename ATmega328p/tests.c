@@ -368,6 +368,31 @@ int main(void) {
     assert(mcu.R[0] == 5);
     assert(mcu.R[28] == 0);
   )
+  run_test("ST Z",
+    execute(
+      "LDI R20, 15\n"
+      "STD Z+4, R20\n"
+      "BREAK\n"
+      "LDI R20, 20\n"
+      "ST Z+, R20\n"
+      "ST Z, R20\n"
+      "BREAK\n"
+      "LDI R20, 5\n"
+      "ST -Z, R20\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[4] == 15);
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[0] == 20);
+    assert(mcu.R[1] == 20);
+    assert(mcu.R[30] == 1); // low byte of the Z register
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[0] == 5);
+    assert(mcu.R[30] == 0);
+  )
   tests_summary();
   return 0;
 }

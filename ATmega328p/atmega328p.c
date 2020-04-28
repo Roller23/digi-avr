@@ -463,6 +463,33 @@ static inline void ST_Y(uint32_t opcode) {
   }
   mcu.pc += 1;
 }
+static inline void ST_Z(uint32_t opcode) {
+  // (i)   1000 001r rrrr 0000
+  // (ii)  1001 001r rrrr 0001
+  // (iii) 1001 001r rrrr 0010
+  // (iv)  10q0 qq1r rrrr 0qqq
+  uint8_t version = opcode & 0b11;
+  uint8_t r = (opcode & 0b111110000) >> 4;
+  uint8_t q = (opcode & 0b111) | ((opcode & 0b110000000000) >> 7);
+  q |= b_get(opcode, 13) >> 8;
+  uint16_t Z = Z_reg_get();
+  if (q > 2) {
+    // with q displacement
+    mcu.data_memory[Z + q] = mcu.R[r];
+  } else if (version == 0) {
+    // Y unchanged
+    mcu.data_memory[Z] = mcu.R[r];
+  } else if (version == 1) {
+    // Y post incremented
+    mcu.data_memory[Z] = mcu.R[r];
+    Z_reg_set(Z + 1);
+  } else {
+    // Y pre decremented
+    Z_reg_set(Z - 1);
+    mcu.data_memory[Z - 1] = mcu.R[r];
+  }
+  mcu.pc += 1;
+}
 //-----------
 static inline void IN(uint32_t opcode){
   // 1011 0AAd dddd AAAA
@@ -879,6 +906,11 @@ static Instruction_t opcodes[] = {
   {"ST Y+", ST_Y, 0b1111111000001111, 0b1001001000001001, 2, 1},
   {"ST -Y", ST_Y, 0b1111111000001111, 0b1001001000001010, 2, 1},
   {"STD Y", ST_Y, 0b1101001000001000, 0b1000001000001000, 2, 1},
+
+  {"ST Z", ST_Z, 0b1111111000001111, 0b1001001000000000, 2, 1},
+  {"ST Z+", ST_Z, 0b1111111000001111, 0b1001001000000001, 2, 1},
+  {"ST -Z", ST_Z, 0b1111111000001111, 0b1001001000000010, 2, 1},
+  {"STD Z", ST_Z, 0b1101001000001000, 0b1000001000000000, 2, 1},
 
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
