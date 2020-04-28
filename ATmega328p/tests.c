@@ -395,9 +395,77 @@ int main(void) {
   )
   run_test("LD X",
     execute(
-      // TO DO
+      "LDI R20, 123\n"
+      "LDI R21, 111\n"
+      "LDI R26, 20\n"
+      "LD R16, X+\n"
+      "LD R17, X\n"
+      "BREAK\n"
+      "LD R18, -X\n"
       "BREAK"
     );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[16] == 123);
+    assert(mcu.R[17] == 111);
+    assert(mcu.R[26] == 21); // low byte of X register
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[18] == 123);
+    assert(mcu.R[26] == 20);
+  )
+  run_test("LD Y",
+    execute(
+      "LDI R20, 123\n"
+      "LDI R21, 111\n"
+      "LDI R28, 20\n"
+      "LD R16, Y+\n"
+      "LD R17, Y\n"
+      "BREAK\n"
+      "LD R18, -Y\n"
+      "BREAK\n"
+      "LDI R28, 10\n"
+      "LDD R19, Y+10\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[16] == 123);
+    assert(mcu.R[17] == 111);
+    assert(mcu.R[28] == 21); // low byte of Y register
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[18] == 123);
+    assert(mcu.R[28] == 20);
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[19] == 123);
+    assert(mcu.R[28] == 10);
+  )
+  run_test("LD Z",
+    execute(
+      "LDI R20, 123\n"
+      "LDI R21, 111\n"
+      "LDI R30, 20\n"
+      "LD R16, Z+\n"
+      "LD R17, Z\n"
+      "BREAK\n"
+      "LD R18, -Z\n"
+      "BREAK\n"
+      "LDI R30, 10\n"
+      "LDD R19, Z+10\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[16] == 123);
+    assert(mcu.R[17] == 111);
+    assert(mcu.R[30] == 21); // low byte of Y register
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[18] == 123);
+    assert(mcu.R[30] == 20);
+    mcu_resume();
+    mcu = mcu_get_copy();
+    assert(mcu.R[19] == 123);
+    assert(mcu.R[30] == 10);
   )
   run_test("SPM",
     // overwrite NOP by 0xE005
