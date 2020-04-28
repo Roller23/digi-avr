@@ -415,7 +415,7 @@ static inline void LDI(uint32_t opcode){
   mcu.R[reg_d] = k;
   mcu.pc += 1;  
 }
-static inline void ST(uint32_t opcode){
+static inline void ST_X(uint32_t opcode){
   // (i)   1001 001r rrrr 1100
   // (ii)  1001 001r rrrr 1101
   // (iii) 1001 001r rrrr 1110
@@ -433,6 +433,33 @@ static inline void ST(uint32_t opcode){
     // X Pre decremented
     X_reg_set(X - 1);
     mcu.data_memory[X - 1] = mcu.R[r];
+  }
+  mcu.pc += 1;
+}
+static inline void ST_Y(uint32_t opcode) {
+  // (i)   1000 001r rrrr 1000
+  // (ii)  1001 001r rrrr 1001
+  // (iii) 1001 001r rrrr 1010
+  // (iv)  10q0 qq1r rrrr 1qqq
+  uint8_t version = opcode & 0b11;
+  uint8_t r = (opcode & 0b111110000) >> 4;
+  uint8_t q = (opcode & 0b111) | ((opcode & 0b110000000000) >> 7);
+  q |= b_get(opcode, 13) >> 8;
+  uint16_t Y = Y_reg_get();
+  if (q > 2) {
+    // with q displacement
+    mcu.data_memory[Y + q] = mcu.R[r];
+  } else if (version == 0) {
+    // Y unchanged
+    mcu.data_memory[Y] = mcu.R[r];
+  } else if (version == 1) {
+    // Y post incremented
+    mcu.data_memory[Y] = mcu.R[r];
+    Y_reg_set(Y + 1);
+  } else {
+    // Y pre decremented
+    Y_reg_set(Y - 1);
+    mcu.data_memory[Y - 1] = mcu.R[r];
   }
   mcu.pc += 1;
 }
@@ -844,9 +871,14 @@ static Instruction_t opcodes[] = {
   {"MOVW", MOVW, 0b1111111100000000, 0b0000000100000000, 1, 1},
   {"LDI", LDI, 0b1111000000000000, 0b1110000000000000, 1, 1}, //???1
 
-  {"ST X", ST, 0b1111111000001111, 0b1001001000001100, 2, 1},
-  {"ST X+", ST, 0b1111111000001111, 0b1001001000001101, 2, 1},
-  {"ST -X", ST, 0b1111111000001111, 0b1001001000001110, 2, 1},
+  {"ST X", ST_X, 0b1111111000001111, 0b1001001000001100, 2, 1},
+  {"ST X+", ST_X, 0b1111111000001111, 0b1001001000001101, 2, 1},
+  {"ST -X", ST_X, 0b1111111000001111, 0b1001001000001110, 2, 1},
+
+  {"ST Y", ST_Y, 0b1111111000001111, 0b1001001000001000, 2, 1},
+  {"ST Y+", ST_Y, 0b1111111000001111, 0b1001001000001001, 2, 1},
+  {"ST -Y", ST_Y, 0b1111111000001111, 0b1001001000001010, 2, 1},
+  {"STD Y", ST_Y, 0b1101001000001000, 0b1000001000001000, 2, 1},
 
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 1, 1},
   // {"SPM", SPM, 0b1111111111111111, 0b1001010111111000, 1, 1},
