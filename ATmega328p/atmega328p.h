@@ -75,6 +75,7 @@ typedef struct {
   bool skip_next;
   bool sleeping;
   bool stopped;
+  bool handle_interrupt;
   uint16_t cycles;
   uint32_t opcode;
   Instruction_t *instruction;
@@ -89,7 +90,6 @@ bool mcu_execute_cycle(void);
 void mcu_resume(void);
 ATmega328p_t mcu_get_copy(void);
 
-static void mcu_init_pointers(ATmega328p_t *mcu);
 static void create_lookup_table(void);
 static Instruction_t *find_instruction(uint16_t opcode);
 static uint16_t get_opcode16(void);
