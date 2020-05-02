@@ -30,7 +30,7 @@ static int print(const char *format, ...) {
 #define b_get(number, n) (number & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 500)
+#define CLOCK_FREQ (SEC / SEC)
 
 static void print_bits(uint32_t number) {
   char bits[35];

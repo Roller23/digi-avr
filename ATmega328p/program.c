@@ -1,15 +1,13 @@
-void function(void) {
-  int haha = 3;
-  haha++;
-}
+#if !defined(__AVR_ATmega328P__)
+  #define __AVR_ATmega328P__
+#endif
+
+#include <stdio.h>
+#include <util/delay.h>
 
 int main(void) {
-  int a = 0;
-  int b = a + 5;
-  if (b == a) {
-    b++;
-  } else {
-    a++;
-  }
+  // _delay_ms(10);
+  putchar('a');
+  asm("BREAK;"); // the only way to stop the MCU
   return 0;
 }
