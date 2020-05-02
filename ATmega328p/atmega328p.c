@@ -48,6 +48,33 @@ static void print_bits(uint32_t number) {
 static ATmega328p_t mcu;
 static Instruction_t *opcode_lookup[LOOKUP_SIZE];
 
+bool check_interrupts(void) {
+
+}
+
+void handle_interrupt(void) {
+  // Controller got interrupted
+  if (!mcu.sleeping) {
+    // TO DO halt CPU
+  }
+  ATmega328p_t mcu_copy = mcu_get_copy();
+  uint16_t return_address = mcu.pc;
+  uint16_t interrupt_address = 0; // get_interrupt_address() or smth
+  stack_push16(return_address);
+  mcu.pc = interrupt_address;
+  do {
+    mcu_execute_cycle();
+  } while (mcu.pc != return_address);
+  ATmega328p_t mcu_interrupted = mcu_get_copy();
+  // MCU finished the interrupt routine, restore old state
+  // but preserve the RAM and SREG
+  mcu = mcu_copy;
+  mcu.SREG.value = mcu_interrupted.SREG.value;
+  memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
+  mcu.sleeping = false;
+  mcu_run();
+}
+
 static inline void ADD(uint32_t opcode) {
   // 0000 11rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
@@ -1065,13 +1092,17 @@ static Instruction_t *find_instruction(uint16_t opcode) {
   return opcodes + opcodes_count - 1; // XXX
 }
 
+static void mcu_init_pointers(ATmega328p_t *mcu) {
+  mcu->boot_section = &mcu->program_memory[PROGRAM_MEMORY_SIZE - BOOTLOADER_SIZE];
+  mcu->R = &mcu->data_memory[0];
+  mcu->IO = &mcu->R[REGISTER_COUNT];
+  mcu->ext_IO = &mcu->IO[IO_REGISTER_COUNT];
+  mcu->RAM = &mcu->ext_IO[EXT_IO_REGISTER_COUNT];
+}
+
 void mcu_init(void) {
   memset(&mcu, 0, sizeof(mcu));
-  mcu.boot_section = &mcu.program_memory[PROGRAM_MEMORY_SIZE - BOOTLOADER_SIZE];
-  mcu.R = &mcu.data_memory[0];
-  mcu.IO = &mcu.R[REGISTER_COUNT];
-  mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
-  mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
+  mcu_init_pointers(&mcu);
   mcu.sp = RAM_SIZE;
   create_lookup_table();
 }
@@ -1095,10 +1126,17 @@ bool mcu_execute_cycle(void) {
     mcu.opcode = get_opcode32();
   }
   mcu.instruction->execute(mcu.opcode);
-  mcu.cycles = (mcu.instruction->cycles - 1);
+  mcu.cycles = mcu.instruction->cycles - 1;
+  if (mcu.sleeping) {
+    // TO DO uh oh, handle it somehow
+  }
   if (mcu.stopped) {
     mcu.cycles = 0; // fix BREAK
     return false;
+  }
+  if (check_interrupts()) {
+    // TO DO aaaaaaaaaaaa
+    handle_interrupt();
   }
   usleep(CLOCK_FREQ);
   return true;

@@ -2,7 +2,7 @@ CC=gcc
 name=mcu
 gui=mcu_gui
 AVR_CC=avr-gcc
-AVR_flags=-Wall -g -Os -mmcu=atmega328p
+AVR_flags=-Wall -Wextra -g -Os -mmcu=atmega328p
 
 all:
 	$(CC) -O3 -o $(name) tests.c atmega328p.c
