@@ -27,14 +27,14 @@ static int print(const char *format, ...) {
   return a;
 }
 
-#define b_get(number, n) (number & (1LLU << (n)))
+#define b_get(number, n) ((number) & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
 #define CLOCK_FREQ (SEC / SEC)
 
 static void print_bits(uint32_t number) {
   char bits[35];
-  memset(bits, 0, 33);
+  memset(bits, 0, 35);
   for (int i = sizeof(number) * 8 - 1, j = 0; i >= 0; i--, j++) {
     bits[j] = b_get(number, i) ? '1' : '0';
     if (i == 16) {
