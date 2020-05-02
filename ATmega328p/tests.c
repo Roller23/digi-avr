@@ -467,6 +467,16 @@ int main(void) {
     assert(mcu.R[19] == 123);
     assert(mcu.R[30] == 10);
   )
+  run_test("LDS",
+    execute(
+      "LDI R23, 123\n"
+      "LDS R20, 23\n"
+      "BREAK"
+    );
+    ATmega328p_t mcu = mcu_get_copy();
+    assert(mcu.R[20] == mcu.R[23]);
+    assert(mcu.R[20] == 123);
+  )
   run_test("SPM",
     // overwrite NOP by 0xE005
     execute(

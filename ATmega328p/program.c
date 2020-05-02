@@ -6,8 +6,8 @@
 #include <util/delay.h>
 
 int main(void) {
-  // _delay_ms(10);
-  putchar('a');
+  _delay_ms(10);
+  // printf("Hello\n");
   asm("BREAK;"); // the only way to stop the MCU
   return 0;
 }

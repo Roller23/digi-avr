@@ -565,6 +565,14 @@ static inline void LD_Z(uint32_t opcode) {
   }
   mcu.pc += 1;
 }
+static inline void LDS(uint32_t opcode){
+  // 1001 000d dddd 0000
+  // kkkk kkkk kkkk kkkk
+  uint16_t k = opcode & 0xFFFF;
+  uint8_t d = ((opcode & 0xF00000) | b_get(opcode, 24)) >> 20;
+  mcu.R[d] = mcu.data_memory[k];
+  mcu.pc += 2;
+}
 static inline void SPM(uint32_t opcode){
   // 1001 0101 1110 1000
   *((uint16_t *)(mcu.program_memory + Z_reg_get())) = word_reg_get(0);
@@ -915,6 +923,7 @@ static inline void BREAK(uint32_t opcode) {
 static inline void XXX(uint32_t opcode) {
   // Unknown opcode
   print("Unknown opcode! 0x%.4X\n", opcode);
+  print_bits(opcode);
   mcu.pc += 1;
 }
 
@@ -1005,6 +1014,8 @@ static Instruction_t opcodes[] = {
   {"LD Z+", LD_Z, 0b1111111000001111, 0b1001000000000001, 2, 1},
   {"LD -Z", LD_Z, 0b1111111000001111, 0b1001000000000010, 2, 1},
   {"LDD Z", LD_Z, 0b1101001000001000, 0b1000000000000000, 2, 1},
+
+  {"LDS", LDS, 0b1111111000001111, 0b1001000000000000, 2, 2},
 
   {"SPM", SPM, 0b1111111111111111, 0b1001010111101000, 5, 1},
 
