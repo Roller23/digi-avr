@@ -1056,7 +1056,7 @@ static Instruction_t *find_instruction(uint16_t opcode) {
 
 void mcu_init(void) {
   memset(&mcu, 0, sizeof(mcu));
-  mcu.boot_section = &mcu.program_memory[PROGRAM_MEMORY_SIZE];
+  mcu.boot_section = &mcu.program_memory[PROGRAM_MEMORY_SIZE - BOOTLOADER_SIZE];
   mcu.R = &mcu.data_memory[0];
   mcu.IO = &mcu.R[REGISTER_COUNT];
   mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];

@@ -14,6 +14,7 @@ typedef uint16_t word;
 #define EXT_IO_REGISTER_COUNT 160
 #define DATA_MEMORY_SIZE 0x0900
 #define PROGRAM_MEMORY_SIZE (32 * KB)
+#define BOOTLOADER_SIZE (KB / 2)
 #define RAM_SIZE (2 * KB)
 #define KB 1024
 #define LOOKUP_SIZE 0xFFFF
@@ -64,7 +65,7 @@ typedef struct {
   byte data_memory[DATA_MEMORY_SIZE]; // contains registers and RAM, allows various addressing modes
   byte ROM[KB];
   byte program_memory[PROGRAM_MEMORY_SIZE];
-  byte *boot_section;
+  byte *boot_section; // Last 512 bytes of program memory
   byte *R; // General purpose registers
   byte *IO; // IO registers
   byte *ext_IO; // External IO registers

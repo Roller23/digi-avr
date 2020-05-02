@@ -16,16 +16,17 @@ static void show_state(void) {
 
 int main(void) {
   mcu_init();
-  mcu_load_code(
-    "LDI R20, 5\n"
-    "LDI R23, 15\n"
-    "CALL function\n"
-    "JMP halt\n"
-    "function: ADD R23, R20, R24\n"
-    "RET\n"
-    "halt: NOP\n"
-    "BREAK"
-  );
+  // mcu_load_code(
+  //   "LDI R20, 5\n"
+  //   "LDI R23, 15\n"
+  //   "CALL function\n"
+  //   "JMP halt\n"
+  //   "function: ADD R23, R20, R24\n"
+  //   "RET\n"
+  //   "halt: NOP\n"
+  //   "BREAK"
+  // );
+  mcu_load_file("program.hex");
   while (true) {
     int res = system("clear");
     bool running = mcu_execute_cycle();
