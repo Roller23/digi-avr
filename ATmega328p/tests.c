@@ -406,6 +406,30 @@ int main(void) {
     assert(mcu.R[0] == 5);
     assert(mcu.R[30] == 0);
   )
+  run_test("STS",
+    execute(
+      "LDI R23, 123\n"
+      "STS 3, R23\n"
+      "BREAK"
+    );
+    mcu_get_copy(&mcu);
+    assert(mcu.R[3] == mcu.R[23]);
+    assert(mcu.R[3] == 123);
+  )
+  run_test("LPM",
+    execute(
+      "LDI R30, 4\n" // Z = 4
+      "LPM\n" // R0 = program[Z] (LPM R20, Z+) - 0x9145
+      "LPM R20, Z+\n"
+      "LPM R21, Z\n"
+      "BREAK"
+    );
+    mcu_get_copy(&mcu);
+    assert(mcu.R[0] == 0x45);
+    assert(mcu.R[20] == 0x45);
+    assert(mcu.R[21] == 0x91);
+    assert(mcu.R[30] == 5);
+  )
   run_test("LD X",
     execute(
       "LDI R20, 123\n"
@@ -470,7 +494,7 @@ int main(void) {
     mcu_get_copy(&mcu);
     assert(mcu.R[16] == 123);
     assert(mcu.R[17] == 111);
-    assert(mcu.R[30] == 21); // low byte of Y register
+    assert(mcu.R[30] == 21); // low byte of Z register
     mcu_resume();
     mcu_get_copy(&mcu);
     assert(mcu.R[18] == 123);

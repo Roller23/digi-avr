@@ -14,7 +14,7 @@
 
 #define DEBUG 1
 
-static int print(const char *format, ...) {
+static inline int print(const char *format, ...) {
   int a = 0;
   #if DEBUG == 1
     va_list args;
@@ -32,7 +32,7 @@ static int print(const char *format, ...) {
 #define SEC (MS * 1000)
 #define CLOCK_FREQ (SEC / SEC)
 
-static void print_bits(uint32_t number) {
+static inline void print_bits(uint32_t number) {
   char bits[35];
   memset(bits, 0, 35);
   for (int i = sizeof(number) * 8 - 1, j = 0; i >= 0; i--, j++) {
@@ -47,30 +47,6 @@ static void print_bits(uint32_t number) {
 
 static ATmega328p_t mcu;
 static Instruction_t *opcode_lookup[LOOKUP_SIZE];
-
-bool check_interrupts(void) {
-  return false;
-}
-
-void handle_interrupt(void) {
-  ATmega328p_t mcu_copy, mcu_interrupted;
-  mcu_get_copy(&mcu_copy);
-  uint16_t return_address = mcu.pc;
-  uint16_t interrupt_address = 0; // get_interrupt_address() or smth
-  stack_push16(return_address);
-  mcu.pc = interrupt_address;
-  do {
-    mcu_execute_cycle();
-  } while (mcu.pc != return_address);
-  mcu_get_copy(&mcu_interrupted);
-  // MCU finished the interrupt routine, restore the old state
-  // but preserve RAM and SREG
-  mcu = mcu_copy;
-  mcu.SREG.value = mcu_interrupted.SREG.value;
-  memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
-  mcu.sleeping = false;
-  mcu_run();
-}
 
 static inline void ADD(uint32_t opcode) {
   // 0000 11rd dddd rrrr
@@ -511,6 +487,34 @@ static inline void ST_Z(uint32_t opcode) {
     // Y pre decremented
     Z_reg_set(Z - 1);
     mcu.data_memory[Z - 1] = mcu.R[r];
+  }
+  mcu.pc += 1;
+}
+static inline void STS(uint32_t opcode){
+  // 1001 001d dddd 0000
+  // kkkk kkkk kkkk kkkk
+  uint16_t k = opcode & 0xFFFF;
+  uint8_t d = ((opcode & 0xF00000) | b_get(opcode, 24)) >> 20;
+  mcu.data_memory[k] = mcu.R[d];
+  mcu.pc += 2;
+}
+static inline void LPM(uint32_t opcode){
+  // (i)   1001 0101 1100 1000
+  // (ii)  1001 000d dddd 0100
+  // (iii) 1001 000d dddd 0101
+  uint8_t version = opcode & 0x000F;
+  uint8_t d = (opcode & 0b111110000) >> 4;
+  uint16_t Z = Z_reg_get();
+  if (version == 8) {
+    // R0 implied
+    mcu.R[0] = mcu.program_memory[Z];
+  } else if (version == 4) {
+    // Z unchanged
+    mcu.R[d] = mcu.program_memory[Z];
+  } else {
+    // Z post incremented
+    mcu.R[d] = mcu.program_memory[Z];
+    Z_reg_set(Z + 1);
   }
   mcu.pc += 1;
 }
@@ -1025,6 +1029,12 @@ static Instruction_t opcodes[] = {
   {"ST -Z", ST_Z, 0b1111111000001111, 0b1001001000000010, 2, 1},
   {"STD Z", ST_Z, 0b1101001000001000, 0b1000001000000000, 2, 1},
 
+  {"STS", STS, 0b1111111000001111, 0b1001001000000000, 2, 2},
+
+  {"LPM", LPM, 0b1111111111111111, 0b1001010111001000, 2, 1},
+  {"LPM Z", LPM, 0b1111111000001111, 0b1001000000000100, 2, 1},
+  {"LPM Z+", LPM, 0b1111111000001111, 0b1001000000000101, 2, 1},
+
   {"LD X", LD_X, 0b1111111000001111, 0b1001000000001100, 1, 1},
   {"LD X+", LD_X, 0b1111111000001111, 0b1001000000001101, 2, 1},
   {"LD -X", LD_X, 0b1111111000001111, 0b1001000000001110, 3, 1},
@@ -1058,7 +1068,7 @@ static Instruction_t opcodes[] = {
 
 static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
-static uint16_t get_opcode16(void) {
+static inline uint16_t get_opcode16(void) {
   if ((mcu.pc + 1) * WORD_SIZE >= PROGRAM_MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
@@ -1066,7 +1076,7 @@ static uint16_t get_opcode16(void) {
   return *((uint16_t *)(mcu.program_memory + mcu.pc * WORD_SIZE));
 }
 
-static uint32_t get_opcode32(void) {
+static inline uint32_t get_opcode32(void) {
   if ((mcu.pc + 2) * WORD_SIZE  >= PROGRAM_MEMORY_SIZE - 1) {
     print("Out of memory bounds!\n");
     exit(EXIT_FAILURE);
@@ -1096,6 +1106,46 @@ void mcu_init(void) {
   create_lookup_table();
 }
 
+void mcu_interrupt(void) {
+  mcu.handle_interrupt = true;
+}
+
+static inline void handle_interrupt(void) {
+  ATmega328p_t mcu_copy, mcu_interrupted;
+  mcu_get_copy(&mcu_copy);
+  uint16_t return_address = mcu.pc;
+  uint16_t interrupt_address = 0; // get_interrupt_address() or smth
+  stack_push16(return_address);
+  mcu.pc = interrupt_address;
+  do {
+    mcu_execute_cycle();
+  } while (mcu.pc != return_address);
+  mcu_get_copy(&mcu_interrupted);
+  // MCU finished the interrupt routine, restore the old state
+  // but preserve RAM and SREG
+  mcu = mcu_copy;
+  mcu.SREG.value = mcu_interrupted.SREG.value;
+  memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
+  mcu.sleeping = false;
+  mcu_run();
+}
+
+static inline void execute_instruction(void) {
+  mcu.opcode = get_opcode16();
+  mcu.instruction = opcode_lookup[mcu.opcode];
+  if (mcu.skip_next) {
+    mcu.pc += mcu.instruction->length;
+    mcu.skip_next = false;
+    return;
+  }
+  print("Executing %s\n", mcu.instruction->name);
+  if (mcu.instruction->length == 2) {
+    mcu.opcode = get_opcode32();
+  }
+  mcu.instruction->execute(mcu.opcode);
+  mcu.cycles = mcu.instruction->cycles - 1;
+}
+
 bool mcu_execute_cycle(void) {
   if (mcu.cycles > 0) {
     print("Executing...\n");
@@ -1107,27 +1157,13 @@ bool mcu_execute_cycle(void) {
     mcu.handle_interrupt = false;
     handle_interrupt();
   }
-  mcu.opcode = get_opcode16();
-  mcu.instruction = opcode_lookup[mcu.opcode];
-  if (mcu.skip_next) {
-    mcu.pc += mcu.instruction->length;
-    mcu.skip_next = false;
-    return true;
-  }
-  print("Executing %s, cycles: %d\n", mcu.instruction->name, mcu.instruction->cycles);
-  if (mcu.instruction->length == 2) {
-    mcu.opcode = get_opcode32();
-  }
-  mcu.instruction->execute(mcu.opcode);
-  mcu.cycles = mcu.instruction->cycles - 1;
-  if (mcu.sleeping) {
-    // TO DO uh oh, handle it somehow
+  if (!mcu.sleeping) {
+    execute_instruction();
   }
   if (mcu.stopped) {
     mcu.cycles = 0; // fix BREAK
     return false;
   }
-  mcu.handle_interrupt = check_interrupts();
   usleep(CLOCK_FREQ);
   return true;
 }
@@ -1211,7 +1247,7 @@ bool mcu_load_code(const char *code) {
   return loaded;
 }
 
-static void set_mcu_pointers(ATmega328p_t *mcu) {
+static inline void set_mcu_pointers(ATmega328p_t *mcu) {
   mcu->boot_section = &mcu->program_memory[PROGRAM_MEMORY_SIZE - BOOTLOADER_SIZE];
   mcu->R = &mcu->data_memory[0];
   mcu->IO = &mcu->R[REGISTER_COUNT];
@@ -1224,59 +1260,59 @@ void mcu_get_copy(ATmega328p_t *_mcu) {
   set_mcu_pointers(_mcu);
 }
 
-static void stack_push16(uint16_t value) {
+static inline void stack_push16(uint16_t value) {
   *((uint16_t *)(mcu.RAM + mcu.sp)) = value;
   mcu.sp -= 2;
 }
 
-static void stack_push8(uint8_t value) {
+static inline void stack_push8(uint8_t value) {
   mcu.RAM[mcu.sp] = value;
   mcu.sp -= 1;
 }
 
-static uint16_t stack_pop16() {
+static inline uint16_t stack_pop16() {
   mcu.sp += 2;
   return *(uint16_t *)(mcu.RAM + mcu.sp);
 }
 
-static uint8_t stack_pop8() {
+static inline uint8_t stack_pop8() {
   mcu.sp += 1;
   return mcu.RAM[mcu.sp];
 }
 
-static uint16_t word_reg_get(uint8_t d) {
+static inline uint16_t word_reg_get(uint8_t d) {
   uint16_t low = mcu.R[d];
   uint16_t high = mcu.R[d + 1];
   return (high << 8) | low;
 }
 
-static uint16_t word_reg_set(uint8_t d, uint16_t value) {
+static inline uint16_t word_reg_set(uint8_t d, uint16_t value) {
   uint16_t low = value & 0x00FF;
   uint16_t high = (value & 0xFF00) >> 8;
   mcu.R[d] = low;
   mcu.R[d + 1] = high;
 }
 
-static uint16_t X_reg_get(void) {
+static inline uint16_t X_reg_get(void) {
   return word_reg_get(26);
 }
 
-static uint16_t Y_reg_get(void) {
+static inline uint16_t Y_reg_get(void) {
   return word_reg_get(28);
 }
 
-static uint16_t Z_reg_get(void) {
+static inline uint16_t Z_reg_get(void) {
   return word_reg_get(30);
 }
 
-static void X_reg_set(uint16_t value) {
+static inline void X_reg_set(uint16_t value) {
   word_reg_set(26, value);
 }
 
-static void Y_reg_set(uint16_t value) {
+static inline void Y_reg_set(uint16_t value) {
   word_reg_set(28, value);
 }
 
-static void Z_reg_set(uint16_t value) {
+static inline void Z_reg_set(uint16_t value) {
   word_reg_set(30, value);
 }

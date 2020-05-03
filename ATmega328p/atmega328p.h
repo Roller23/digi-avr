@@ -89,25 +89,29 @@ void mcu_run(void);
 bool mcu_execute_cycle(void);
 void mcu_resume(void);
 void mcu_get_copy(ATmega328p_t *mcu);
+void mcu_interrupt(void);
 
-static void set_mcu_pointers(ATmega328p_t *mcu);
+static inline void execute_instruction(void);
+static inline void set_mcu_pointers(ATmega328p_t *mcu);
 static void create_lookup_table(void);
 static Instruction_t *find_instruction(uint16_t opcode);
-static uint16_t get_opcode16(void);
-static uint32_t get_opcode32(void);
+static inline uint16_t get_opcode16(void);
+static inline uint32_t get_opcode32(void);
+static inline bool check_interrupts(void);
+static inline void handle_interrupt(void);
 
-static void stack_push16(uint16_t value);
-static void stack_push8(uint8_t value);
-static uint16_t stack_pop16(void);
-static uint8_t stack_pop8(void);
+static inline void stack_push16(uint16_t value);
+static inline void stack_push8(uint8_t value);
+static inline uint16_t stack_pop16(void);
+static inline uint8_t stack_pop8(void);
 
-static uint16_t word_reg_get(uint8_t d);
-static uint16_t word_reg_set(uint8_t d, uint16_t value);
-static uint16_t X_reg_get(void);
-static uint16_t Y_reg_get(void);
-static uint16_t Z_reg_get(void);
-static void X_reg_set(uint16_t value);
-static void Y_reg_set(uint16_t value);
-static void Z_reg_set(uint16_t value);
+static inline uint16_t word_reg_get(uint8_t d);
+static inline uint16_t word_reg_set(uint8_t d, uint16_t value);
+static inline uint16_t X_reg_get(void);
+static inline uint16_t Y_reg_get(void);
+static inline uint16_t Z_reg_get(void);
+static inline void X_reg_set(uint16_t value);
+static inline void Y_reg_set(uint16_t value);
+static inline void Z_reg_set(uint16_t value);
 
 #endif // __ATMEGA328P_
