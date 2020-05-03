@@ -1,7 +1,9 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+
+// Do nothing for all unhandled interrupts
+EMPTY_INTERRUPT(BADISR_vect);
 
 ISR(ADC_vect) {
   _delay_us(1);

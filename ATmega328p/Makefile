@@ -13,7 +13,7 @@ program:
 	avr-objcopy -j .text -j .data -O ihex program.bin program.hex
 	rm program.bin
 
-asm:
+disasm:
 	avr-objdump -m avr -D program.hex
 
 debug:
