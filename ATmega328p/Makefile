@@ -6,7 +6,7 @@ AVR_flags=-Wall -Wextra -Os -mmcu=atmega328p
 
 all:
 	$(CC) -O3 -o $(name) tests.c atmega328p.c
-	$(CC) -O3 -o $(gui) mcu_gui.c atmega328p.c
+	$(CC) -O3 -pthread -o $(gui) mcu_gui.c atmega328p.c
 
 program:
 	$(AVR_CC) $(AVR_flags) -o program.bin program.c

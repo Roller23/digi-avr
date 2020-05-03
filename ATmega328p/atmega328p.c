@@ -30,7 +30,7 @@ static inline int print(const char *format, ...) {
 #define b_get(number, n) ((number) & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 3)
+#define CLOCK_FREQ (SEC / 5)
 
 typedef struct {
   int16_t number : 12;
@@ -943,6 +943,7 @@ static inline void NOP(uint32_t opcode) {
 }
 
 static inline void SLEEP(uint32_t opcode) {
+  print("Switching to sleep mode\n");
   mcu.sleeping = true;
   mcu.pc += 1;
 }
@@ -1121,6 +1122,10 @@ void mcu_send_interrupt(Interrupt_vector_t vector) {
 }
 
 static inline void handle_interrupt(void) {
+  if (mcu.sleeping) {
+    print("Waking up from sleep mode\n");
+    mcu.sleeping = false;
+  }
   ATmega328p_t mcu_copy, mcu_interrupted;
   mcu_get_copy(&mcu_copy);
   uint16_t return_address = mcu.pc;
@@ -1136,7 +1141,6 @@ static inline void handle_interrupt(void) {
   mcu = mcu_copy;
   mcu.SREG.value = mcu_interrupted.SREG.value;
   memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
-  mcu.sleeping = false;
   mcu.interrupt_address = 0;
   if (mcu.auto_execute) {
     mcu_run();
