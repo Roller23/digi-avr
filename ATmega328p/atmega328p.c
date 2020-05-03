@@ -12,11 +12,11 @@
 #define CYAN "\033[36m"
 #define RESET "\x1B[0m"
 
-#define DEBUG 1
+#define DEBUG_MODE 1
 
 static inline int print(const char *format, ...) {
   int a = 0;
-  #if DEBUG == 1
+  #if DEBUG_MODE == 1
     va_list args;
     va_start(args, format);
     a += printf(CYAN "[Debug] ");
@@ -30,7 +30,11 @@ static inline int print(const char *format, ...) {
 #define b_get(number, n) ((number) & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / 5)
+#define Hz (1UL)
+#define KHz (Hz * 1000UL)
+#define MHz (KHz * 1000UL)
+#define CLOCK_SPEED (KHz)
+#define CLOCK_FREQ (SEC / CLOCK_SPEED)
 
 typedef struct {
   int16_t number : 12;
@@ -621,7 +625,7 @@ static inline void IN(uint32_t opcode){
   reg_d |= b_get(opcode, 8) >> 4;
   uint8_t a = (opcode & 0xF) | ((opcode & 0x600) >> 5);
   mcu.R[reg_d] = mcu.IO[a];
-  mcu.pc += 1;  
+  mcu.pc += 1;
 }
 static inline void OUT(uint32_t opcode) {
   // 1011 1AAr rrrr AAAA
@@ -755,7 +759,7 @@ static inline void CPI(uint32_t opcode) {
   // 0011 KKKK dddd KKKK
   // Compare with immediate
   uint16_t k = (opcode & 0xF) | ((opcode & 0xF00) >> 4);
-  uint16_t d = (opcode & 0xF0) >> 4;
+  uint16_t d = ((opcode & 0xF0) >> 4) + 16;
   byte *R = mcu.R;
   uint8_t res = R[d] - k;
   mcu.SREG.flags.H = !b_get(R[d], 3) && b_get(k, 3) || b_get(k, 3) && b_get(res, 3) || b_get(res, 3) && !b_get(R[d], 3);
@@ -1152,7 +1156,7 @@ static inline void execute_instruction(void) {
     mcu.skip_next = false;
     return;
   }
-  print("Executing %s\n", mcu.instruction->name);
+  print("Executing %s, %x\n", mcu.instruction->name, mcu.pc * WORD_SIZE);
   if (mcu.instruction->length == 2) {
     mcu.opcode = get_opcode32();
   }
