@@ -6,7 +6,6 @@
 #include <math.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <pthread.h>
 #include <stdarg.h>
 
 #define CYAN "\033[36m"
@@ -1120,12 +1119,12 @@ void mcu_init(void) {
 }
 
 void mcu_send_interrupt(Interrupt_vector_t vector) {
-  print("Received an interrupt (%d)\n", vector);
   mcu.handle_interrupt = true;
   mcu.interrupt_address = (uint16_t)vector * WORD_SIZE;
 }
 
 static inline void handle_interrupt(void) {
+  print("Received an interrupt (%d)\n", mcu.interrupt_address / WORD_SIZE);
   if (mcu.sleeping) {
     print("Waking up from sleep mode\n");
     mcu.sleeping = false;
@@ -1198,7 +1197,7 @@ void mcu_resume(void) {
   }
 }
 
-bool mcu_load_file(const char *filename) {
+bool mcu_load_ihex(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
     print("Could not open %s\n", filename);
@@ -1259,7 +1258,7 @@ bool mcu_load_code(const char *code) {
   if (status == -1) {
     return false;
   }
-  bool loaded = mcu_load_file("_t.hex");
+  bool loaded = mcu_load_ihex("_t.hex");
   char *files[] = {"_t.asm", "_t.hex", "_t.obj", "_t.eep.hex", "_t.cof"};
   for (int i = 0; i < sizeof(files) / sizeof(char *); i++) {
     remove(files[i]);

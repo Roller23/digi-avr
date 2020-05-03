@@ -87,7 +87,7 @@ typedef struct {
 
 // API
 void mcu_init(void);
-bool mcu_load_file(const char *filename);
+bool mcu_load_ihex(const char *filename);
 bool mcu_load_code(const char *code);
 void mcu_run(void);
 bool mcu_execute_cycle(void);

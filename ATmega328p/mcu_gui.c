@@ -29,7 +29,7 @@ int main(void) {
   pthread_t thread;
   pthread_create(&thread, NULL, handle_stdin, NULL);
   mcu_init();
-  mcu_load_file("program.hex");
+  mcu_load_ihex("program.hex");
   mcu_run();
   return 0;
 }

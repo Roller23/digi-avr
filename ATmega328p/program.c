@@ -23,7 +23,8 @@ void _delay_s(int s) {
 }
 
 int main(void) {
-  _delay_s(1);
+  // _delay_s(5);
+  sleep_cpu();
   ASM("BREAK"); // stop the MCU
   return 0;
 }
