@@ -53,7 +53,8 @@ bool check_interrupts(void) {
 }
 
 void handle_interrupt(void) {
-  ATmega328p_t mcu_copy = mcu_get_copy();
+  ATmega328p_t mcu_copy, mcu_interrupted;
+  mcu_get_copy(&mcu_copy);
   uint16_t return_address = mcu.pc;
   uint16_t interrupt_address = 0; // get_interrupt_address() or smth
   stack_push16(return_address);
@@ -61,7 +62,7 @@ void handle_interrupt(void) {
   do {
     mcu_execute_cycle();
   } while (mcu.pc != return_address);
-  ATmega328p_t mcu_interrupted = mcu_get_copy();
+  mcu_get_copy(&mcu_interrupted);
   // MCU finished the interrupt routine, restore the old state
   // but preserve RAM and SREG
   mcu = mcu_copy;
@@ -1090,11 +1091,7 @@ static Instruction_t *find_instruction(uint16_t opcode) {
 
 void mcu_init(void) {
   memset(&mcu, 0, sizeof(mcu));
-  mcu.boot_section = &mcu.program_memory[PROGRAM_MEMORY_SIZE - BOOTLOADER_SIZE];
-  mcu.R = &mcu.data_memory[0];
-  mcu.IO = &mcu.R[REGISTER_COUNT];
-  mcu.ext_IO = &mcu.IO[IO_REGISTER_COUNT];
-  mcu.RAM = &mcu.ext_IO[EXT_IO_REGISTER_COUNT];
+  set_mcu_pointers(&mcu);
   mcu.sp = RAM_SIZE;
   create_lookup_table();
 }
@@ -1214,8 +1211,17 @@ bool mcu_load_code(const char *code) {
   return loaded;
 }
 
-ATmega328p_t mcu_get_copy(void) {
-  return mcu;
+static void set_mcu_pointers(ATmega328p_t *mcu) {
+  mcu->boot_section = &mcu->program_memory[PROGRAM_MEMORY_SIZE - BOOTLOADER_SIZE];
+  mcu->R = &mcu->data_memory[0];
+  mcu->IO = &mcu->R[REGISTER_COUNT];
+  mcu->ext_IO = &mcu->IO[IO_REGISTER_COUNT];
+  mcu->RAM = &mcu->ext_IO[EXT_IO_REGISTER_COUNT];
+}
+
+void mcu_get_copy(ATmega328p_t *_mcu) {
+  *_mcu = mcu;
+  set_mcu_pointers(_mcu);
 }
 
 static void stack_push16(uint16_t value) {
