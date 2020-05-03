@@ -13,6 +13,9 @@ program:
 	avr-objcopy -j .text -j .data -O ihex program.bin program.hex
 	rm program.bin
 
+asm:
+	avr-objdump -m avr -D program.hex
+
 debug:
 	$(CC) -O0 -g -o $(name) tests.c atmega328p.c
 	gdb ./$(name)

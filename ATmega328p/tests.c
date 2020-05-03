@@ -171,7 +171,7 @@ int main(void) {
     mcu_get_copy(&mcu);
     assert(mcu.R[20] == 10);
   )
-  run_test("RCALL and RET",
+  run_test("CALL and RET",
     execute(
       "LDI R20, 5\n"
       "CALL routine\n"

@@ -30,7 +30,15 @@ static inline int print(const char *format, ...) {
 #define b_get(number, n) ((number) & (1LLU << (n)))
 #define MS 1000
 #define SEC (MS * 1000)
-#define CLOCK_FREQ (SEC / SEC)
+#define CLOCK_FREQ (SEC / 3)
+
+typedef struct {
+  int16_t number : 12;
+} int12_t;
+
+typedef struct {
+  int8_t number : 7;
+} int7_t;
 
 static inline void print_bits(uint32_t number) {
   char bits[35];
@@ -644,8 +652,8 @@ static inline void POP(uint32_t opcode){
 static inline void RJMP(uint32_t opcode) {
   // 1100 kkkk kkkk kkkk
   // Relative jump to PC + k + 1
-  uint16_t k = opcode & 0x0FFF;
-  mcu.pc += k + 1;
+  int12_t k = {.number = (opcode & 0x0FFF)};
+  mcu.pc += k.number + 1;
 }
 
 static inline void IJMP(uint32_t opcode) {
@@ -683,7 +691,7 @@ static inline void CALL(uint32_t opcode) {
   // Long call, push PC + 2 to stack, PC = k
   uint32_t k = opcode & 0xFFFF;
   k |= b_get(opcode, 16);
-  k |= (0xF00000) >> 3;
+  k |= (opcode & 0xF00000) >> 3;
   k |= b_get(opcode, 24) >> 3;
   stack_push16(mcu.pc + 2);
   mcu.pc = k;
@@ -807,9 +815,9 @@ static inline void BRBS(uint32_t opcode) {
   // 1111 00kk kkkk ksss
   // Branch if SREG(s) is set (PC += k + 1), k is in U2
   uint8_t s = opcode & 0b111;
-  int8_t k = ((b_get(opcode, 9) << 1) | (opcode & 0b1111111000)) >> 3;
+  int7_t k = {.number = ((opcode & 0b1111111000) >> 3)};
   if (b_get(mcu.SREG.value, s)) {
-    mcu.pc += k + 1;
+    mcu.pc += k.number + 1;
     return;
   }
   mcu.pc += 1;
@@ -819,9 +827,9 @@ static inline void BRBC(uint32_t opcode) {
   // 1111 01kk kkkk ksss
   // Branch if SREG(s) is cleared (PC += k + 1), k is in U2
   uint8_t s = opcode & 0b111;
-  int8_t k = ((b_get(opcode, 9) << 1) | (opcode & 0b1111111000)) >> 3;
+  int7_t k = {.number = ((opcode & 0b1111111000) >> 3)};
   if (!b_get(mcu.SREG.value, s)) {
-    mcu.pc += k + 1;
+    mcu.pc += k.number + 1;
     return;
   }
   mcu.pc += 1;
@@ -1106,20 +1114,22 @@ void mcu_init(void) {
   create_lookup_table();
 }
 
-void mcu_interrupt(void) {
+void mcu_send_interrupt(Interrupt_vector_t vector) {
+  print("Received an interrupt (%d)\n", vector);
   mcu.handle_interrupt = true;
+  mcu.interrupt_address = (uint16_t)vector * WORD_SIZE;
 }
 
 static inline void handle_interrupt(void) {
   ATmega328p_t mcu_copy, mcu_interrupted;
   mcu_get_copy(&mcu_copy);
   uint16_t return_address = mcu.pc;
-  uint16_t interrupt_address = 0; // get_interrupt_address() or smth
   stack_push16(return_address);
-  mcu.pc = interrupt_address;
+  mcu.pc = mcu.interrupt_address;
   do {
     mcu_execute_cycle();
   } while (mcu.pc != return_address);
+  print("Interrupt finished\n");
   mcu_get_copy(&mcu_interrupted);
   // MCU finished the interrupt routine, restore the old state
   // but preserve RAM and SREG
@@ -1127,7 +1137,10 @@ static inline void handle_interrupt(void) {
   mcu.SREG.value = mcu_interrupted.SREG.value;
   memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
   mcu.sleeping = false;
-  mcu_run();
+  mcu.interrupt_address = 0;
+  if (mcu.auto_execute) {
+    mcu_run();
+  }
 }
 
 static inline void execute_instruction(void) {
@@ -1169,13 +1182,16 @@ bool mcu_execute_cycle(void) {
 }
 
 void mcu_run(void) {
+  mcu.auto_execute = true;
   while (mcu_execute_cycle());
 }
 
 void mcu_resume(void) {
   mcu.stopped = false;
   mcu.pc += 1; // skip BREAK
-  mcu_run();
+  if (mcu.auto_execute) {
+    mcu_run();
+  }
 }
 
 bool mcu_load_file(const char *filename) {

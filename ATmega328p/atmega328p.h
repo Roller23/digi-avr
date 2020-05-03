@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "interrupts.h"
+
 typedef uint8_t byte;
 typedef uint8_t bit;
 typedef uint16_t word;
@@ -76,6 +78,8 @@ typedef struct {
   bool sleeping;
   bool stopped;
   bool handle_interrupt;
+  bool auto_execute;
+  uint16_t interrupt_address;
   uint16_t cycles;
   uint32_t opcode;
   Instruction_t *instruction;
@@ -89,7 +93,7 @@ void mcu_run(void);
 bool mcu_execute_cycle(void);
 void mcu_resume(void);
 void mcu_get_copy(ATmega328p_t *mcu);
-void mcu_interrupt(void);
+void mcu_send_interrupt(Interrupt_vector_t vector);
 
 static inline void execute_instruction(void);
 static inline void set_mcu_pointers(ATmega328p_t *mcu);

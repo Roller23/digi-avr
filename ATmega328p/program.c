@@ -1,13 +1,13 @@
-#if !defined(__AVR_ATmega328P__)
-  #define __AVR_ATmega328P__
-#endif
-
 #include <stdio.h>
+#include <stdbool.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
+
+ISR(ADC_vect) {
+  _delay_us(1);
+}
 
 int main(void) {
-  _delay_ms(10);
-  // printf("Hello\n");
-  asm("BREAK;"); // the only way to stop the MCU
+  _delay_us(1);
   return 0;
 }
