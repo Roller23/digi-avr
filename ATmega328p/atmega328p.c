@@ -1142,9 +1142,6 @@ static inline void handle_interrupt(void) {
   mcu.SREG.value = mcu_interrupted.SREG.value;
   memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
   mcu.interrupt_address = 0;
-  if (mcu.auto_execute) {
-    mcu_run();
-  }
 }
 
 static inline void execute_instruction(void) {
@@ -1165,7 +1162,6 @@ static inline void execute_instruction(void) {
 
 bool mcu_execute_cycle(void) {
   if (mcu.cycles > 0) {
-    print("Executing...\n");
     usleep(CLOCK_FREQ);
     mcu.cycles--;
     return true;
