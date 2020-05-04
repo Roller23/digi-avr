@@ -14,17 +14,25 @@
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
+ISR(INT0_vect) {
+  sleep_cpu();
+}
+
+ISR(INT1_vect) {
+  wdt_reset();
+}
+
 void _delay_s(int s) {
   for (int i = 0; i < s; i++) {
-    for (int j = 0; j < 10; j++) {
-      _delay_ms(100);
+    for (int j = 0; j < 5; j++) {
+      _delay_ms(200);
     }
   }
 }
 
 int main(void) {
-  // _delay_s(5);
+  // _delay_s(1);
   sleep_cpu();
-  ASM("BREAK"); // stop the MCU
+  ASM("BREAK");
   return 0;
 }

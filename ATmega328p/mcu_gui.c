@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "atmega328p.h"
 
@@ -18,9 +19,20 @@ static void show_state(void) {
 }
 
 void *handle_stdin(void *arg) {
-  int c = getchar();
-  if (c == 'i') {
-    mcu_send_interrupt(INT0_vect);
+  while (true) {
+    int c = getchar();
+    if (c == 'i') {
+      int vector = 0;
+      printf("Select the vector: ");
+      int sc = scanf("%d", &vector);
+      if (sc == 0) {
+        continue;
+      }
+      mcu_send_interrupt((Interrupt_vector_t)vector);
+    }
+    if (c == 'q') {
+      break;
+    }
   }
   return 0;
 }

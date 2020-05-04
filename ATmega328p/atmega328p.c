@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <sys/time.h>
 
 #define CYAN "\033[36m"
 #define RESET "\x1B[0m"
@@ -1129,8 +1130,6 @@ static inline void handle_interrupt(void) {
     print("Waking up from sleep mode\n");
     mcu.sleeping = false;
   }
-  ATmega328p_t mcu_copy, mcu_interrupted;
-  mcu_get_copy(&mcu_copy);
   uint16_t return_address = mcu.pc;
   stack_push16(return_address);
   mcu.pc = mcu.interrupt_address;
@@ -1138,12 +1137,6 @@ static inline void handle_interrupt(void) {
     mcu_execute_cycle();
   } while (mcu.pc != return_address);
   print("Interrupt finished\n");
-  mcu_get_copy(&mcu_interrupted);
-  // MCU finished the interrupt routine, restore the old state
-  // but preserve RAM and SREG
-  mcu = mcu_copy;
-  mcu.SREG.value = mcu_interrupted.SREG.value;
-  memcpy(mcu.RAM, mcu_interrupted.RAM, RAM_SIZE);
   mcu.interrupt_address = 0;
 }
 
@@ -1164,6 +1157,7 @@ static inline void execute_instruction(void) {
 }
 
 bool mcu_execute_cycle(void) {
+  uint64_t time_start = get_micro_time();
   if (mcu.cycles > 0) {
     usleep(CLOCK_FREQ);
     mcu.cycles--;
@@ -1180,7 +1174,10 @@ bool mcu_execute_cycle(void) {
     mcu.cycles = 0; // fix BREAK
     return false;
   }
-  usleep(CLOCK_FREQ);
+  uint64_t sleep_time = CLOCK_FREQ - (get_micro_time() - time_start);
+  if (sleep_time > 0) {
+    usleep(sleep_time % CLOCK_FREQ);
+  }
   return true;
 }
 
@@ -1334,4 +1331,10 @@ static inline void Y_reg_set(uint16_t value) {
 
 static inline void Z_reg_set(uint16_t value) {
   word_reg_set(30, value);
+}
+
+static inline uint64_t get_micro_time(void) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec * ((uint64_t)1000000) + tv.tv_usec;
 }

@@ -118,4 +118,6 @@ static inline void X_reg_set(uint16_t value);
 static inline void Y_reg_set(uint16_t value);
 static inline void Z_reg_set(uint16_t value);
 
+static inline uint64_t get_micro_time(void);
+
 #endif // __ATMEGA328P_
