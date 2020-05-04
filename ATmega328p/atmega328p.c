@@ -1346,5 +1346,5 @@ static inline void throw_exception(const char *cause, ...) {
   vfprintf(stdout, cause, args);
   va_end(args);
   printf(RESET);
-  exit(EXIT_FAILURE);
+  mcu_send_interrupt(RESET_vect);
 }
