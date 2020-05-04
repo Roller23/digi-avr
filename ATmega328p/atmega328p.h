@@ -119,5 +119,6 @@ static inline void Y_reg_set(uint16_t value);
 static inline void Z_reg_set(uint16_t value);
 
 static inline uint64_t get_micro_time(void);
+static inline void throw_exception(const char *cause, ...);
 
 #endif // __ATMEGA328P_

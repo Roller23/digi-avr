@@ -10,6 +10,7 @@
 #include <sys/time.h>
 
 #define CYAN "\033[36m"
+#define RED "\x1B[1;31m"
 #define RESET "\x1B[0m"
 
 #define DEBUG_MODE 1
@@ -1083,16 +1084,14 @@ static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 
 static inline uint16_t get_opcode16(void) {
   if ((mcu.pc + 1) * WORD_SIZE >= PROGRAM_MEMORY_SIZE - 1) {
-    print("Out of memory bounds!\n");
-    exit(EXIT_FAILURE);
+    throw_exception("Out of memory bounds!\n");
   }
   return *((uint16_t *)(mcu.program_memory + mcu.pc * WORD_SIZE));
 }
 
 static inline uint32_t get_opcode32(void) {
   if ((mcu.pc + 2) * WORD_SIZE  >= PROGRAM_MEMORY_SIZE - 1) {
-    print("Out of memory bounds!\n");
-    exit(EXIT_FAILURE);
+    throw_exception("Out of memory bounds!\n");
   }
   return (get_opcode16() << 16) | *(uint16_t *)(mcu.program_memory + (mcu.pc + 1) * WORD_SIZE);
 }
@@ -1121,18 +1120,18 @@ void mcu_init(void) {
 
 void mcu_send_interrupt(Interrupt_vector_t vector) {
   mcu.handle_interrupt = true;
-  mcu.interrupt_address = (uint16_t)vector * WORD_SIZE;
+  mcu.interrupt_address = (uint16_t)vector;
 }
 
 static inline void handle_interrupt(void) {
-  print("Received an interrupt (%d)\n", mcu.interrupt_address / WORD_SIZE);
+  print("Received an interrupt (%d)\n", mcu.interrupt_address);
   if (mcu.sleeping) {
     print("Waking up from sleep mode\n");
     mcu.sleeping = false;
   }
   uint16_t return_address = mcu.pc;
   stack_push16(return_address);
-  mcu.pc = mcu.interrupt_address;
+  mcu.pc = mcu.interrupt_address * WORD_SIZE;
   do {
     mcu_execute_cycle();
   } while (mcu.pc != return_address);
@@ -1166,6 +1165,7 @@ bool mcu_execute_cycle(void) {
   if (mcu.handle_interrupt) {
     mcu.handle_interrupt = false;
     handle_interrupt();
+    time_start = get_micro_time();
   }
   if (!mcu.sleeping) {
     execute_instruction();
@@ -1286,12 +1286,12 @@ static inline void stack_push8(uint8_t value) {
   mcu.sp -= 1;
 }
 
-static inline uint16_t stack_pop16() {
+static inline uint16_t stack_pop16(void) {
   mcu.sp += 2;
   return *(uint16_t *)(mcu.RAM + mcu.sp);
 }
 
-static inline uint8_t stack_pop8() {
+static inline uint8_t stack_pop8(void) {
   mcu.sp += 1;
   return mcu.RAM[mcu.sp];
 }
@@ -1337,4 +1337,14 @@ static inline uint64_t get_micro_time(void) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return tv.tv_sec * ((uint64_t)1000000) + tv.tv_usec;
+}
+
+static inline void throw_exception(const char *cause, ...) {
+  printf(RED "MCU exception!\n");
+  va_list args;
+  va_start(args, cause);
+  vfprintf(stdout, cause, args);
+  va_end(args);
+  printf(RESET);
+  exit(EXIT_FAILURE);
 }
