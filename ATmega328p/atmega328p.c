@@ -1339,6 +1339,10 @@ static inline uint64_t get_micro_time(void) {
   return tv.tv_sec * ((uint64_t)1000000) + tv.tv_usec;
 }
 
+void mcu_set_exception_handler(void (*handler)(void)) {
+  mcu.exception_handler = handler;
+}
+
 static inline void throw_exception(const char *cause, ...) {
   printf(RED "MCU exception!\n");
   va_list args;
@@ -1347,4 +1351,7 @@ static inline void throw_exception(const char *cause, ...) {
   va_end(args);
   printf(RESET);
   mcu_send_interrupt(RESET_vect);
+  if (mcu.exception_handler != NULL) {
+    mcu.exception_handler();
+  }
 }

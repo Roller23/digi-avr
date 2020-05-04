@@ -83,6 +83,7 @@ typedef struct {
   uint16_t cycles;
   uint32_t opcode;
   Instruction_t *instruction;
+  void (*exception_handler)(void);
 } ATmega328p_t;
 
 // API
@@ -94,6 +95,7 @@ bool mcu_execute_cycle(void);
 void mcu_resume(void);
 void mcu_get_copy(ATmega328p_t *mcu);
 void mcu_send_interrupt(Interrupt_vector_t vector);
+void mcu_set_exception_handler(void (*handler)(void));
 
 static inline void execute_instruction(void);
 static inline void set_mcu_pointers(ATmega328p_t *mcu);

@@ -3,8 +3,13 @@
 #include "atmega328p.h"
 #include "tests.h"
 
+void handler(void) {
+  exit(EXIT_FAILURE);
+}
+
 static void execute(const char *code) {
   mcu_init();
+  mcu_set_exception_handler(handler);
   if (!mcu_load_code(code)) {
     exit(EXIT_FAILURE);
   }
