@@ -1174,9 +1174,9 @@ bool mcu_execute_cycle(void) {
     mcu.cycles = 0; // fix BREAK
     return false;
   }
-  uint64_t sleep_time = CLOCK_FREQ - (get_micro_time() - time_start);
+  uint64_t sleep_time = (CLOCK_FREQ - (get_micro_time() - time_start)) % CLOCK_FREQ;
   if (sleep_time > 0) {
-    usleep(sleep_time % CLOCK_FREQ);
+    usleep(sleep_time);
   }
   return true;
 }
