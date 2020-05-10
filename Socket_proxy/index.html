@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATmega328p Emulator</title>
+</head>
+<body>
+  
+</body>
+<script>
+  const socket = new WebSocket('ws://localhost:3000');
+  const log = console.log;
+
+  socket.handlers = {};
+
+  socket.emit = function(event, data) {
+    let object = {event, data};
+    let message = JSON.stringify(object);
+    log('Sending ', object)
+    this.send(message);
+  }
+
+  socket.on = function(event, handler) {
+    this.handlers[event] = handler;
+  }
+
+  socket.addEventListener('open', (event) => {
+    log('Connected to the proxy server');
+  });
+
+  socket.addEventListener('close', (event) => {
+    log('Connection closed');
+  });
+
+  socket.addEventListener('message', (event) => {
+    let message = null;
+    try {
+      message = JSON.parse(event.data);
+    } catch (error) {
+      log('Could not parse a message');
+      return;
+    }
+    log('Received ', message);
+    if (typeof socket.handlers[message.event] === 'function') {
+      socket.handlers[message.event](message.data);
+    }
+  });
+
+  socket.on('ready', data => {
+    log('Server ready, got data ', data);
+    socket.emit('ping', 'Hello')
+  });
+
+  socket.on('pong', data => {
+    log('Server: ', data);
+  });
+
+  </script>
+</html>
