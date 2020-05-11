@@ -1,5 +1,7 @@
 import ctypes
 
+# https://stackoverflow.com/questions/4351721/python-ctypes-passing-a-struct-to-a-function-as-a-pointer-to-get-back-data
+
 class ATmega328p_t(ctypes.Structure):
   _fields_ = [
     ("SREG", ctypes.c_uint8),

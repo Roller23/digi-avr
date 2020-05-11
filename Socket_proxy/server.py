@@ -47,8 +47,7 @@ on('ping', send_pong)
 async def ws_server(websocket, path):
   global ws
   ws = websocket
-  ready_event = {'event': 'ready', 'data': 'Hello'}
-  await ws.send(json.dumps(ready_event))
+  await emit('ready', 'Hello')
   await execute_c(mcu_fn.mcu_init)
   while True:
     try:
