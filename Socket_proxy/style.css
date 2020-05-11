@@ -1,0 +1,126 @@
+@font-face {
+  font-family: Bokalo;
+  src: url(./fonts/Baloo2-Regular.ttf);
+}
+
+@font-face {
+  font-family: BokaloBold;
+  src: url(./fonts/Baloo2-SemiBold.ttf);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0px;
+  background-color: rgb(49, 49, 49);
+  color: rgb(230, 230, 230);
+  font-family: BokaloBOld;
+}
+
+.code-area {
+  width: 100%;
+  height: 100%;
+  background-color: rgb(49, 49, 49);
+  color: white;
+  font-family: BokaloBold;
+  padding: 10px;
+  font-size: 18px;
+  outline: none;
+  border: 0px;
+  resize: none;
+}
+
+.btn {
+  border: 0px;
+  padding: 5px 12px;
+  border-radius: 0px;
+  background-color: rgb(21, 141, 21);
+  color: white;
+  cursor: pointer;
+  font-family: BokaloBold;
+  font-size: 14px;
+  outline: none;
+  box-shadow: -2px 2px 0 2px rgb(8, 70, 8);
+  transition: 0.3s;
+}
+
+.btn:active {
+  transition: 0s;
+  box-shadow: 0px 0px 0 0px rgb(8, 70, 8);
+  transform: translate(-2px, 2px);
+}
+
+.top-bar .btn {
+  margin-right: 10px;
+}
+
+.top-bar {
+  background-color: rgb(24, 24, 24);
+  width: 100%;
+  height: 60px;
+  box-shadow: 0px 2px 2px 1px black;
+  z-index: 2;
+  position: relative;
+}
+
+.top-bar .logo {
+  display: inline-block;
+  font-size: 30px;
+  height: 60px;
+  line-height: 60px;
+  padding-left: 20px;
+}
+
+.top-bar .btn-holder {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.main-container {
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 60px);
+}
+
+.console-wrap {
+  height: 100%;
+  max-width: 400px;
+  width: 100%;
+  background-color: rgb(37, 37, 37);
+  display: flex;
+  flex-direction: column;
+}
+
+.console-wrap .head {
+  font-size: 20px;
+  padding: 10px;
+  border-left: 1px solid rgb(122, 122, 122);
+}
+
+.console-wrap .consoles-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.console-wrap .console {
+  height: 100%;
+  width: 100%;
+  border: 1px solid rgb(122, 122, 122);
+  border-right: 0px;
+  border-top: 0px;
+  overflow: auto;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+.code-wrap {
+  height: 100%;
+  width: 100%;
+}

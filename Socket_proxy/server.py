@@ -77,6 +77,7 @@ async def ws_server(websocket, path):
   global ws
   ws = websocket
   await emit('ready', 'Hello')
+  await log('Connected with socket server')
   await execute_c(mcu_fn.mcu_init)
   while True:
     try:

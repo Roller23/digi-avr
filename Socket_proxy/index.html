@@ -4,16 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ATmega328p Emulator</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Online ATmega328p emulator</h1>
-  <div class="mcu-console">
-    
+  <div class="top-bar">
+    <div class="logo">
+      Online ATmega328p Emulator
+    </div>
+    <div class="btn-holder">
+      <button type="button" class="btn compile-code">Load code</button>
+      <button type="button" class="btn execute-cycle">Execute cycle</button>
+    </div>
   </div>
-  <textarea class='code-area'></textarea>
-  <br>
-  <button class='compile-code'>Compile</button>
-  <button class='execute-cycle'>Execyte cycle</button>
+  <div class="main-container">
+    <div class="code-wrap">
+      <textarea class="code-area"></textarea>
+    </div>
+    <div class="console-wrap">
+      <div class="head">Terminals</div>
+      <div class="consoles-container">
+        <div class="console log-output"></div>
+        <div class="console mcu-output"></div>
+      </div>
+    </div>
+  </div>
 </body>
 <script src="./script.js"></script>
 </html>

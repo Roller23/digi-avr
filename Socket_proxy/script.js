@@ -47,18 +47,20 @@
     log('Server: ', data);
   });
 
-  socket.on('log', data => {
-    log('Python log:', data);
-  });
-
   socket.on('test', data => {
     log('Python test:', data);
+  });
+
+  socket.on('log', data => {
+    let span = document.createElement('span');
+    span.innerText = data;
+    get('.log-output').appendChild(span);
   });
 
   socket.on('console', data => {
     let span = document.createElement('span');
     span.innerText = data;
-    get('.mcu-console').appendChild(span);
+    get('.mcu-output').appendChild(span);
   });
 
   get('.compile-code').addEventListener('click', e => {
