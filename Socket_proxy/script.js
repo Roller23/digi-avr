@@ -1,6 +1,8 @@
 (async () => {
   const socket = new WebSocket('ws://localhost:3000');
   const log = console.log;
+  const get = selector => document.querySelector(selector);
+  window.test = () => socket.emit('test', 'test');
 
   socket.handlers = {};
 
@@ -39,7 +41,6 @@
 
   socket.on('ready', data => {
     log('Server ready, got data ', data);
-    // socket.emit('ping', 'Hello')
   });
 
   socket.on('pong', data => {
@@ -50,10 +51,23 @@
     log('Python log:', data);
   });
 
+  socket.on('test', data => {
+    log('Python test:', data);
+  });
+
   socket.on('console', data => {
     let span = document.createElement('span');
     span.innerText = data;
-    document.querySelector('.mcu-console').appendChild(span);
+    get('.mcu-console').appendChild(span);
+  });
+
+  get('.compile-code').addEventListener('click', e => {
+    let code = get('.code-area').value;
+    socket.emit('compile asm', code);
+  });
+
+  get('.execute-cycle').addEventListener('click', e => {
+    socket.emit('execute cycle');
   });
 
 })();

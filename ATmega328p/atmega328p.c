@@ -1160,7 +1160,7 @@ static inline void execute_instruction(void) {
     mcu.skip_next = false;
     return;
   }
-  print("Executing %s, %x\n", mcu.instruction->name, mcu.pc * WORD_SIZE);
+  print("Executing %s, PC = 0x%x\n", mcu.instruction->name, mcu.pc * WORD_SIZE);
   if (mcu.instruction->length == 2) {
     mcu.opcode = get_opcode32();
   }
