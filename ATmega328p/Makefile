@@ -27,7 +27,7 @@ update:
 
 push:
 	make update
-	git add .
+	git add ./../.
 	git commit -m "Automated makefile commit"
 	git push
 

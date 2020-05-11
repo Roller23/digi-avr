@@ -1,6 +1,13 @@
 {
   "files.associations": {
     "atmega328p.h": "c",
-    "instructions.h": "c"
-  }
+    "instructions.h": "c",
+    "stdbool.h": "c",
+    "cstdbool": "c",
+    "c++config.h": "c",
+    "cpu_defines.h": "c",
+    "sleep.h": "c",
+    "interrupt.h": "c"
+  },
+  "python.pythonPath": "/usr/bin/python3"
 }
