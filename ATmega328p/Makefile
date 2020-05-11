@@ -13,6 +13,9 @@ program:
 	avr-objcopy -j .text -j .data -O ihex program.bin program.hex
 	rm program.bin
 
+shared:
+	$(CC) -O3 -fPIC -shared -o mcu_shared.so atmega328p.c -lm -D SHARED
+
 disasm:
 	avr-objdump -m avr -D program.hex
 

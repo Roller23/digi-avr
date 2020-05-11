@@ -9,9 +9,21 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
-#define CYAN "\033[36m"
-#define RED "\x1B[1;31m"
-#define RESET "\x1B[0m"
+#if defined(SHARED)
+
+  #pragma GCC diagnostic ignored "-Wformat-zero-length"
+
+  #define CYAN ""
+  #define RED ""
+  #define RESET ""
+
+#else
+
+  #define CYAN "\033[36m"
+  #define RED "\x1B[1;31m"
+  #define RESET "\x1B[0m"
+
+#endif
 
 #define DEBUG_MODE 1
 
@@ -1116,6 +1128,7 @@ void mcu_init(void) {
   set_mcu_pointers(&mcu);
   mcu.sp = RAM_SIZE;
   create_lookup_table();
+  print("MCU initialized\n");
 }
 
 void mcu_send_interrupt(Interrupt_vector_t vector) {
