@@ -1,7 +1,50 @@
 (async () => {
+
+  const get = selector => document.querySelector(selector);
+  const getAll = selector => document.querySelectorAll(selector);
+
+  HTMLElement.prototype.on = function(events, callback, bool) {
+    let eventsArray = events.split(' ');
+    let element = this;
+    eventsArray.forEach(event => {
+      element.addEventListener(event, callback, bool);
+    });
+  }
+
+  HTMLElement.prototype.shouldScroll = function() {
+    let scrollPosition = this.scrollTop + this.offsetHeight;
+    let difference = Math.abs(this.scrollHeight - scrollPosition);
+    return difference < 10;
+  }
+
+  HTMLElement.prototype.scrollDown = function(amount) {
+    this.scrollTop = amount;
+  }
+
+  NodeList.prototype.on = function(events, callback, bool) {
+    let eventsArray = events.split(' ');
+    Array.from(this).forEach(element => {
+      eventsArray.forEach(event => {
+        element.addEventListener(event, callback, bool);
+      });
+    });
+  }
+
+  const create = (name, options, text) => {
+    let element = document.createElement(name);
+    if (typeof options === 'object') {
+      for (let [key, value] of Object.entries(options)) {
+        element.setAttribute(key, value);
+      }
+    }
+    if (typeof text === 'string') {
+      element.innerText = text;
+    }
+    return element;
+  }
+
   const socket = new WebSocket('ws://localhost:3000');
   const log = console.log;
-  const get = selector => document.querySelector(selector);
   window.test = () => socket.emit('test', 'test');
 
   socket.handlers = {};
@@ -52,23 +95,31 @@
   });
 
   socket.on('log', data => {
-    let span = document.createElement('span');
-    span.innerText = data;
-    get('.log-output').appendChild(span);
+    let span = create('span', {}, data);
+    let terminal = get('.log-output');
+    let shouldScroll = terminal.shouldScroll();
+    terminal.appendChild(span);
+    if (shouldScroll) {
+      terminal.scrollDown(terminal.scrollHeight * 10);
+    }
   });
 
   socket.on('console', data => {
-    let span = document.createElement('span');
-    span.innerText = data;
-    get('.mcu-output').appendChild(span);
+    let span = create('span', {}, data);
+    let terminal = get('.mcu-output');
+    let shouldScroll = terminal.shouldScroll();
+    terminal.appendChild(span);
+    if (shouldScroll) {
+      terminal.scrollDown(terminal.scrollHeight * 10);
+    }
   });
 
-  get('.compile-code').addEventListener('click', e => {
+  get('.compile-code').on('click', e => {
     let code = get('.code-area').value;
     socket.emit('compile asm', code);
   });
 
-  get('.execute-cycle').addEventListener('click', e => {
+  get('.execute-cycle').on('click', e => {
     socket.emit('execute cycle');
   });
 
