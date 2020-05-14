@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ATmega328p Emulator</title>
+  <link rel="stylesheet" href="editor/lib/codemirror.css">
+  <link rel="stylesheet" href="editor/themes/midnight.css">
+  <link rel="stylesheet" href="editor/themes/liquibyte.css">
+  <link rel="stylesheet" href="editor/themes/monokai.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,15 +16,20 @@
       Online ATmega328p Emulator
     </div>
     <div class="btn-holder">
-      <button type="button" class="btn compile-code">Load code</button>
+      <button type="button" class="btn compile-c">Load C</button>
+      <button type="button" class="btn compile-asm">Load ASM</button>
       <button type="button" class="btn execute-cycle">Execute cycle</button>
+      <button type="button" class="btn mcu-run">Run</button>
+      <button type="button" class="btn mcu-stop">Stop</button>
+      <button type="button" class="btn mcu-resume">Resume</button>
     </div>
   </div>
   <div class="main-container">
     <div class="tile-manager">
       <div class="tile">
+        <div class="x">&times;</div>
         <div class="code-wrap">
-          <textarea class="code-area"></textarea>
+          <!-- <textarea class="code-area"></textarea> -->
         </div>
       </div>
     </div>
@@ -33,5 +42,7 @@
     </div>
   </div>
 </body>
+<script src="./editor/lib/codemirror.js"></script>
+<script src="./editor/modes/clike/clike.js"></script>
 <script src="./script.js"></script>
 </html>

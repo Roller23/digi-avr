@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #if defined(SHARED)
 
@@ -48,6 +49,7 @@ static inline int print(const char *format, ...) {
 #define MHz (KHz * 1000UL)
 #define CLOCK_SPEED (KHz)
 #define CLOCK_FREQ (SEC / CLOCK_SPEED)
+#define TMP "./tmp/"
 
 typedef struct {
   int16_t number : 12;
@@ -1124,6 +1126,7 @@ static Instruction_t *find_instruction(uint16_t opcode) {
 }
 
 void mcu_init(void) {
+  mkdir(TMP, 0777);
   memset(&mcu, 0, sizeof(mcu));
   set_mcu_pointers(&mcu);
   mcu.sp = RAM_SIZE;
@@ -1257,22 +1260,54 @@ bool mcu_load_ihex(const char *filename) {
   return true;
 }
 
-bool mcu_load_code(const char *code) {
-  FILE *file = fopen("_t.asm", "w");
+bool mcu_load_asm(const char *code) {
+  FILE *file = fopen(TMP"_t.asm", "w");
   if (file == NULL) {
     return false;
   }
   fputs(code, file);
   fclose(file);
-  int status = system("avra _t.asm > /dev/null");
+  int status = system("avra "TMP"_t.asm > /dev/null");
   if (status == -1) {
     return false;
   }
-  bool loaded = mcu_load_ihex("_t.hex");
-  char *files[] = {"_t.asm", "_t.hex", "_t.obj", "_t.eep.hex", "_t.cof"};
+  bool loaded = mcu_load_ihex(TMP"_t.hex");
+  char *files[] = {TMP"_t.asm", TMP"_t.hex", TMP"_t.obj",
+    TMP"_t.eep.hex", TMP"_t.cof"};
   for (int i = 0; i < sizeof(files) / sizeof(char *); i++) {
     remove(files[i]);
   }
+  return loaded;
+}
+
+bool mcu_load_c(const char *code) {
+  FILE *file = fopen(TMP"_t.c", "w");
+  if (file == NULL) {
+    print("Could not create the file\n");
+    return false;
+  }
+  fputs(code, file);
+  fclose(file);
+  int status = system(
+    "avr-gcc "
+    "-Wall -Wextra -Os -mmcu=atmega328p "
+    "-o "TMP"_t.bin "TMP"_t.c"
+  );
+  remove(TMP"_t.c");
+  if (status == -1) {
+    print("Could not compile\n");
+    return false;
+  }
+  status = system(
+    "avr-objcopy -j .text -j .data -O ihex "TMP"_t.bin "TMP"_t.hex"
+  );
+  remove(TMP"_t.bin");
+  if (status == -1) {
+    print("Could not generate ihex file\n");
+    return false;
+  }
+  bool loaded = mcu_load_ihex(TMP"_t.hex");
+  remove(TMP"_t.hex");
   return loaded;
 }
 

@@ -3,6 +3,48 @@
   const get = selector => document.querySelector(selector);
   const getAll = selector => document.querySelectorAll(selector);
 
+  let runInterval = undefined;
+
+  const editorThemes = ['midnight', 'monokai', 'liquibyte'];
+
+  const editor = CodeMirror(get('.code-wrap'), {
+    lineNumbers: true,
+    mode: 'text/x-c',
+    theme: 'monokai',
+    value: '// Write code here...',
+    indentUnit: 2,
+    tabSize: 2,
+    indentWithTabs: true,
+    lineWrapping: true,
+    allowDropFileTypes: ['text/plain', 'text/*'],
+    spellcheck: false,
+    autocorrect: false,
+    autocapitalize: false
+  });
+
+  if (localStorage.lastCode) {
+    editor.setValue(localStorage.lastCode);
+  }
+
+  setInterval(() => {
+    localStorage.lastCode = editor.getValue();
+  }, 1000);
+
+  const runMCU = () => {
+    runInterval = setInterval(() => {
+      socket.emit('execute cycle');
+    }, 100);
+  }
+
+  const terminalAppend = (terminal, text) => {
+    let span = create('span', {}, text);
+    let shouldScroll = terminal.shouldScroll();
+    terminal.appendChild(span);
+    if (shouldScroll) {
+      terminal.scrollDown(terminal.scrollHeight * 10);
+    }
+  }
+
   HTMLElement.prototype.on = function(events, callback, bool) {
     let eventsArray = events.split(' ');
     let element = this;
@@ -65,7 +107,8 @@
   });
 
   socket.addEventListener('close', (event) => {
-    log('Connection closed');
+    clearInterval(runInterval);
+    terminalAppend(get('.log-output'), 'Connection closed');
   });
 
   socket.addEventListener('message', (event) => {
@@ -95,32 +138,42 @@
   });
 
   socket.on('log', data => {
-    let span = create('span', {}, data);
-    let terminal = get('.log-output');
-    let shouldScroll = terminal.shouldScroll();
-    terminal.appendChild(span);
-    if (shouldScroll) {
-      terminal.scrollDown(terminal.scrollHeight * 10);
-    }
+    terminalAppend(get('.log-output'), data);
   });
 
   socket.on('console', data => {
-    let span = create('span', {}, data);
-    let terminal = get('.mcu-output');
-    let shouldScroll = terminal.shouldScroll();
-    terminal.appendChild(span);
-    if (shouldScroll) {
-      terminal.scrollDown(terminal.scrollHeight * 10);
-    }
+    terminalAppend(get('.mcu-output'), data);
   });
 
-  get('.compile-code').on('click', e => {
-    let code = get('.code-area').value;
+  socket.on('execute stop', () => {
+    log('Stopping');
+    clearInterval(runInterval);
+  });
+
+  socket.on('mcu resumed', runMCU);
+
+  get('.compile-asm').on('click', e => {
+    let code = editor.getValue();
     socket.emit('compile asm', code);
+  });
+
+  get('.compile-c').on('click', e => {
+    let code = editor.getValue();
+    socket.emit('compile c', code);
   });
 
   get('.execute-cycle').on('click', e => {
     socket.emit('execute cycle');
+  });
+
+  get('.mcu-run').on('click', runMCU);
+
+  get('.mcu-stop').on('click', e => {
+    clearInterval(runInterval);
+  });
+
+  get('.mcu-resume').on('click', () => {
+    socket.emit('mcu resume');
   });
 
 })();

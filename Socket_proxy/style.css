@@ -30,6 +30,12 @@
   background-color: rgb(155, 155, 155);
 }
 
+.CodeMirror {
+  height: 100%;
+  width: 100%;
+  font-family: BokaloBold;
+}
+
 body {
   margin: 0px;
   background-color: rgb(49, 49, 49);
@@ -148,6 +154,15 @@ body {
 .tile-manager .tile {
   height: 100%;
   width: 100%;
+  position: relative;
+}
+
+.tile-manager .tile .x {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 30px;
+  cursor: pointer;
 }
 
 .code-wrap {

@@ -10,7 +10,7 @@ void handler(void) {
 static void execute(const char *code) {
   mcu_init();
   mcu_set_exception_handler(handler);
-  if (!mcu_load_code(code)) {
+  if (!mcu_load_asm(code)) {
     exit(EXIT_FAILURE);
   }
   mcu_run();
