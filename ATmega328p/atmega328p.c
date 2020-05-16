@@ -1099,6 +1099,7 @@ static int opcodes_count = sizeof(opcodes) / sizeof(Instruction_t);
 static inline uint16_t get_opcode16(void) {
   if ((mcu.pc + 1) * WORD_SIZE >= PROGRAM_MEMORY_SIZE - 1) {
     throw_exception("Out of memory bounds!\n");
+    return 0;
   }
   return *((uint16_t *)(mcu.program_memory + mcu.pc * WORD_SIZE));
 }
@@ -1106,6 +1107,7 @@ static inline uint16_t get_opcode16(void) {
 static inline uint32_t get_opcode32(void) {
   if ((mcu.pc + 2) * WORD_SIZE  >= PROGRAM_MEMORY_SIZE - 1) {
     throw_exception("Out of memory bounds!\n");
+    return 0;
   }
   return (get_opcode16() << 16) | *(uint16_t *)(mcu.program_memory + (mcu.pc + 1) * WORD_SIZE);
 }
@@ -1129,7 +1131,7 @@ void mcu_init(void) {
   mkdir(TMP, 0777);
   memset(&mcu, 0, sizeof(mcu));
   set_mcu_pointers(&mcu);
-  mcu.sp = RAM_SIZE;
+  mcu.sp = RAM_SIZE - 1;
   create_lookup_table();
   print("MCU initialized\n");
 }

@@ -92,6 +92,8 @@ async def execute_cycle():
   global mcu_running
   if mcu_running:
    await execute_c(mcu_fn.mcu_execute_cycle, True)
+   mcu_fn.mcu_get_copy(mcu)
+   await emit('mcu state', mcu_types.to_string(mcu))
 
 on('ping', send_pong)
 on('test', do_test)

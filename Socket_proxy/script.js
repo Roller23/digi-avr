@@ -6,6 +6,7 @@
   let runInterval = undefined;
 
   const editorThemes = ['midnight', 'monokai', 'liquibyte'];
+  const MCU_SP_START = 1024 * 2 - 1;
 
   const editor = CodeMirror(get('.code-wrap'), {
     lineNumbers: true,
@@ -26,7 +27,7 @@
     editor.setValue(localStorage.lastCode);
   }
 
-  setInterval(() => {
+  let saveCodeInterval = setInterval(() => {
     localStorage.lastCode = editor.getValue();
   }, 1000);
 
@@ -34,6 +35,15 @@
     runInterval = setInterval(() => {
       socket.emit('execute cycle');
     }, 100);
+  }
+
+  const getStack = state => {
+    let stack = [];
+    log(state.sp, state.RAM)
+    for (let i = MCU_SP_START - 1; i >= state.sp; i--) {
+      stack.push(state.data_memory[state.RAM + 1 + i]);
+    }
+    return stack;
   }
 
   const terminalAppend = (terminal, text) => {
@@ -151,6 +161,12 @@
   });
 
   socket.on('mcu resumed', runMCU);
+
+  socket.on('mcu state', state => {
+    state = JSON.parse(state);
+    log('MCU state', state);
+    log('Stack', getStack(state));
+  });
 
   get('.compile-asm').on('click', e => {
     let code = editor.getValue();
