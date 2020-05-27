@@ -22,16 +22,7 @@ ISR(INT1_vect) {
   wdt_reset();
 }
 
-void _delay_s(int s) {
-  for (int i = 0; i < s; i++) {
-    for (int j = 0; j < 5; j++) {
-      _delay_ms(200);
-    }
-  }
-}
-
 int main(void) {
-  // _delay_s(1);
   sleep_cpu();
   ASM("BREAK");
   return 0;

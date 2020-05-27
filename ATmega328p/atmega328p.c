@@ -1137,6 +1137,7 @@ void mcu_init(void) {
 }
 
 void mcu_send_interrupt(Interrupt_vector_t vector) {
+  print("Sending an interrupt: %d\n", (int)vector);
   mcu.handle_interrupt = true;
   mcu.interrupt_address = (uint16_t)vector;
 }

@@ -57,7 +57,7 @@ async def send_pong(data):
 
 async def do_test(data):
   global mcu
-  print('Test data =', data)
+  print('Test data = ', data)
   string = 'This is a test'.encode('utf-8')
   with wurlitzer.pipes() as (out, err):
     mcu_fn.mcu_load_asm(string)
@@ -95,12 +95,26 @@ async def execute_cycle():
    mcu_fn.mcu_get_copy(mcu)
    await emit('mcu state', mcu_types.to_string(mcu))
 
+async def reset_mcu():
+  pass
+
+async def interrupt_mcu(vect):
+  await log('Received interrupt (' + str(vect) + ')\n')
+  with wurlitzer.pipes() as (out, err):
+    mcu_fn.mcu_send_interrupt(vect)
+  data = out.read()
+  await log('MCU interrupted\n')
+  if data:
+    await web_console(data)
+
 on('ping', send_pong)
 on('test', do_test)
 on('compile asm', compile_asm)
 on('compile c', compile_c)
 on('execute cycle', execute_cycle)
 on('mcu resume', resume_mcu)
+on('reset mcu', reset_mcu)
+on('interrupt', interrupt_mcu)
 
 async def ws_server(websocket, path):
   global ws
@@ -134,6 +148,9 @@ mcu_fn.mcu_load_c.restypes = [ctypes.c_bool]
 # bool mcu_execute_cycle(void);
 mcu_fn.mcu_execute_cycle.argtypes = []
 mcu_fn.mcu_execute_cycle.restypes = [ctypes.c_bool]
+# void mcu_send_interrupt(Interrupt_vector_t vector)
+mcu_fn.mcu_send_interrupt.argtypes = [ctypes.c_int]
+mcu_fn.mcu_send_interrupt.restypes = []
 
 threading._start_new_thread(start_http, (None, ))
 

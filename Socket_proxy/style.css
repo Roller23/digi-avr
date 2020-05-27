@@ -145,16 +145,55 @@ body {
   font-size: 14px;
 }
 
-.tile-manager {
+.left-wrap {
   height: 100%;
   width: 100%;
+}
+
+.left-wrap .tabs {
+  height: 30px;
+  width: 100%;
+  background-color: rgb(22, 22, 22);
   display: flex;
+}
+
+.left-wrap .tabs .tab {
+  line-height: 30px;
+  padding: 0px 10px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.left-wrap .tabs .tab:hover {
+  background-color: rgb(87, 87, 87);
+}
+
+.tile-manager {
+  height: calc(100% - 30px);
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .tile-manager .tile {
   height: 100%;
   width: 100%;
   position: relative;
+  overflow: auto;
+}
+
+.tile-manager.two .tile {
+  width: 50%;
+}
+
+.tile-manager.three .tile {
+  width: 50%;
+  height: 50%;
 }
 
 .tile-manager .tile .x {
@@ -163,9 +202,40 @@ body {
   right: 20px;
   font-size: 30px;
   cursor: pointer;
+  z-index: 4;
 }
 
 .code-wrap {
   height: 100%;
   width: 100%;
+}
+
+.registers {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0px 10px;
+}
+
+.registers .reg {
+  background-color: black;
+  color: white;
+  padding: 5px 8px;
+  border-radius: 10px;
+  margin: 0px 5px 5px 0px;
+}
+
+.stack .value {
+  background-color: black;
+  color: white;
+  padding: 5px 8px;
+  border-radius: 10px;
+  margin-bottom: 5px;
+  max-width: 200px;
+  width: 100%;
+}
+
+.tile[tab=mcu],
+.tile[tab=options],
+.tile[tab=actions] {
+  padding: 10px;
 }

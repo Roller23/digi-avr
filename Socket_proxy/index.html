@@ -25,14 +25,66 @@
     </div>
   </div>
   <div class="main-container">
-    <div class="tile-manager">
-      <div class="tile">
-        <div class="x">&times;</div>
-        <div class="code-wrap">
-          <!-- <textarea class="code-area"></textarea> -->
+    
+    <div class="left-wrap">
+      <div class="tabs">
+        <div class="tab" tab='code'>Code</div>
+        <div class="tab" tab='mcu'>MCU</div>
+        <div class="tab" tab='options'>Options</div>
+        <div class="tab" tab='actions'>Actions</div>
+      </div>
+      <div class="tile-manager">
+
+        <div class="tile" tab='code'>
+          <div class="code-wrap"></div>
+          <div class="x">&times;</div>
         </div>
+
+        <div class="tile" tab='mcu' style="display: none;">
+          <p>Registers:</p>
+          <div class="registers"></div>
+          <p>Program counter: <span class='pc'>0x0</span></p>
+          <p>Stack:</p>
+          <div class="stack">
+            <div class="value">Empty</div>
+          </div>
+          <div class="x">&times;</div>
+        </div>
+
+        <div class="tile" tab='options' style="display: none;">
+          <p>MCU frequency: <input type="number" class="freq"> Hz</p>
+          <p>
+            Editor theme: <br>
+            <select class='theme-select'>
+              <option value="none" selected disabled>Select theme</option>
+              <option value="monokai">Monokai</option>
+              <option value="midnight">Midnight</option>
+              <option value="liquibyte">Liquibyte</option>
+            </select>
+          </p>
+          <div class="x">&times;</div>
+        </div>
+
+        <div class="tile" tab='actions' style="display: none;">
+          <p>
+            <button class="btn reset-app">Reset program</button>
+          </p>
+          <p>
+            <button class="btn reset-mcu">Reset MCU</button>
+          </p>
+          <p>
+            <select class='interrupt-table'>
+              <option value="none" selected disabled>Select interrupt</option>
+            </select>
+            <br>
+            <button class="btn send-irq">Send interrupt</button>
+          </p>
+          <div class="x">&times;</div>
+        </div>
+
       </div>
     </div>
+
     <div class="console-wrap">
       <div class="head">Terminals</div>
       <div class="consoles-container">
