@@ -91,6 +91,14 @@
     });
   }
 
+  Number.prototype.getBit = function(n) {
+    return (this << n);
+  }
+
+  Number.prototype.bitSet = function(n) {
+    return !!(this & (1).getBit(n));
+  }
+
   const create = (name, options, text) => {
     let element = document.createElement(name);
     if (typeof options === 'object') {
@@ -177,6 +185,8 @@
 
   socket.on('mcu resumed', runMCU);
 
+  let stackPointer = -1;
+
   let updateStack = state => {
     let stack = getStack(state);
     let wrap = get('.stack');
@@ -197,19 +207,32 @@
     wrap.appendChild(fragment);
   }
 
-  let stackPointer = -1;
+  let updateRegisters = state => {
+    for (let i = 0; i < 32; i++) {
+      get('.reg-' + (i + 1) + ' .value').innerText = '0x' + state.data_memory[state.R + i].toString(16);
+    }
+  }
+
+  let updateLEDs = state => {
+    let value = state.data_memory[state.ext_IO + 0];
+    let leds = Array.from(getAll('.leds .led')).reverse();
+    log('LED value:', value);
+    for (let i = 0; i < 8; i++) {
+      let led = leds[i];
+      led.classList[value.bitSet(i) ? 'add' : 'remove']('active');
+    }
+  }
 
   socket.on('mcu state', state => {
     state = JSON.parse(state);
     get('.pc').innerText = '0x' + (state.pc * 2).toString(16);
-    for (let i = 0; i < 32; i++) {
-      get('.reg-' + (i + 1) + ' .value').innerText = '0x' + state.data_memory[state.R + i].toString(16);
-    }
-    log('MCU state', state);
+    updateRegisters(state);
     if (stackPointer !== state.sp) {
       updateStack(state);
     }
     stackPointer = state.sp;
+    updateLEDs(state);
+    log('MCU state', state);
   });
 
   get('.compile-asm').on('click', e => {

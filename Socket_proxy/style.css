@@ -239,3 +239,22 @@ body {
 .tile[tab=actions] {
   padding: 10px;
 }
+
+.leds {
+  display: flex;
+  width: 100%;
+}
+
+.leds .led {
+  width: 20px;
+  height: 20px;
+  background-color: rgb(139, 0, 0);
+  margin: 5px;
+  border-radius: 50%;
+  transition: 0.1s;
+}
+
+.leds .led.active {
+  background-color: rgb(207, 0, 0);
+  box-shadow: 0 0 5px 4px rgb(207, 0, 0);
+}

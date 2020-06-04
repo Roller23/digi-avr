@@ -96,7 +96,10 @@ async def execute_cycle():
    await emit('mcu state', mcu_types.to_string(mcu))
 
 async def reset_mcu():
-  pass
+  await execute_c(mcu_fn.mcu_init)
+  mcu_fn.mcu_get_copy(mcu)
+  await emit('mcu state', mcu_types.to_string(mcu))
+  await log('MCU resetted\n')
 
 async def interrupt_mcu(vect):
   await log('Received interrupt (' + str(vect) + ')\n')

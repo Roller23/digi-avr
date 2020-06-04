@@ -1131,7 +1131,6 @@ void mcu_init(void) {
   mkdir(TMP, 0777);
   memset(&mcu, 0, sizeof(mcu));
   set_mcu_pointers(&mcu);
-  mcu.sp = RAM_SIZE - 1;
   create_lookup_table();
   print("MCU initialized\n");
 }
@@ -1320,6 +1319,7 @@ static inline void set_mcu_pointers(ATmega328p_t *mcu) {
   mcu->IO = &mcu->R[REGISTER_COUNT];
   mcu->ext_IO = &mcu->IO[IO_REGISTER_COUNT];
   mcu->RAM = &mcu->ext_IO[EXT_IO_REGISTER_COUNT];
+  mcu->sp = RAM_SIZE - 1;
 }
 
 void mcu_get_copy(ATmega328p_t *_mcu) {
