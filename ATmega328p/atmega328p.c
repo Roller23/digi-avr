@@ -415,8 +415,6 @@ static inline void FMULSU(uint32_t opcode){
   mcu.pc += 1;
 }
 
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
 static inline void MOV(uint32_t opcode){
   // 0010 11rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
@@ -523,6 +521,7 @@ static inline void STS(uint32_t opcode){
   uint16_t k = opcode & 0xFFFF;
   uint8_t d = ((opcode & 0xF00000) | b_get(opcode, 24)) >> 20;
   mcu.data_memory[k] = mcu.R[d];
+  mcu.data_memory_change = (int16_t)k;
   mcu.pc += 2;
 }
 static inline void LPM(uint32_t opcode){
@@ -1175,6 +1174,7 @@ static inline void execute_instruction(void) {
 
 bool mcu_execute_cycle(void) {
   uint64_t time_start = get_micro_time();
+  mcu.data_memory_change = -1; // indicate no change
   if (mcu.cycles > 0) {
     usleep(CLOCK_FREQ);
     mcu.cycles--;
@@ -1292,7 +1292,7 @@ bool mcu_load_c(const char *code) {
   fclose(file);
   int status = system(
     "avr-gcc "
-    "-Wall -Wextra -Os -mmcu=atmega328p "
+    "-Wall -Wextra -O3 -mmcu=atmega328p "
     "-o "TMP"_t.bin "TMP"_t.c"
   );
   remove(TMP"_t.c");

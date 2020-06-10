@@ -24,7 +24,7 @@
     theme: localStorage.theme,
     value: '// Write code here...',
     indentUnit: 2,
-    tabSize: 2,
+    tabSize: 4,
     indentWithTabs: true,
     lineWrapping: true,
     allowDropFileTypes: ['text/plain', 'text/*'],
@@ -193,7 +193,6 @@
     while (wrap.firstChild) {
       wrap.firstChild.remove();
     }
-    log('Stack', stack);
     if (stack.length === 0) {
       return wrap.appendChild(
         create('div', {class: 'value'}, 'Empty')
@@ -216,11 +215,18 @@
   let updateLEDs = state => {
     let value = state.data_memory[state.ext_IO + 0];
     let leds = Array.from(getAll('.leds .led')).reverse();
-    log('LED value:', value);
     for (let i = 0; i < 8; i++) {
       let led = leds[i];
       led.classList[value.bitSet(i) ? 'add' : 'remove']('active');
     }
+  }
+
+  let updateTerminal = char => {
+    if (!char) return;
+    char = String.fromCharCode(char);
+    let terminal = get('.mcu-terminal');
+    terminal.innerText += char;
+    terminal.scrollDown(terminal.scrollHeight * 10);
   }
 
   socket.on('mcu state', state => {
@@ -232,6 +238,9 @@
     }
     stackPointer = state.sp;
     updateLEDs(state);
+    if (state.data_memory_change !== -1 && state.data_memory_change >= state.ext_IO + 1) {
+      updateTerminal(state.data_memory[state.data_memory_change]);
+    }
     log('MCU state', state);
   });
 

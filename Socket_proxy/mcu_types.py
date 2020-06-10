@@ -25,7 +25,7 @@ def to_string(struct):
   dict_struct['RAM'] = 160 + dict_struct['ext_IO']
   del dict_struct['program_memory']
   del dict_struct['exeption_handler']
-  del dict_struct['instruction'] # TO DO: get the name at least
+  del dict_struct['instruction']
   return json.dumps(dict_struct)
 
 class Instruction_t(ctypes.Structure):
@@ -58,8 +58,9 @@ class ATmega328p_t(ctypes.Structure):
     ("handle_interrupt", ctypes.c_bool),
     ("auto_execute", ctypes.c_bool),
     ("interrupt_address", ctypes.c_uint16),
+    ("data_memory_change", ctypes.c_int16),
     ("cycles", ctypes.c_uint16),
     ("opcode", ctypes.c_uint32),
-    ("instruction", ctypes.POINTER(Instruction_t)), # ??
-    ("exeption_handler", ctypes.POINTER(ctypes.c_int)) # ??
+    ("instruction", ctypes.POINTER(Instruction_t)),
+    ("exeption_handler", ctypes.POINTER(ctypes.c_int))
   ]

@@ -80,6 +80,7 @@ typedef struct {
   bool handle_interrupt;
   bool auto_execute;
   uint16_t interrupt_address;
+  int16_t data_memory_change; // -1 if there was no change, data_memory address otherwise
   uint16_t cycles;
   uint32_t opcode;
   Instruction_t *instruction;
