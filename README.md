@@ -1,2 +1,1 @@
-# Arduino-emulator
-Arduino emulator
+# ATmega328p Emulator
