@@ -1,10 +1,6 @@
 import ctypes
 import json
 
-# https://stackoverflow.com/questions/4351721/python-ctypes-passing-a-struct-to-a-function-as-a-pointer-to-get-back-data
-
-# https://stackoverflow.com/questions/50043861/python-ctypes-passing-pointer-for-data
-
 def getdict(struct):
   return dict((field, getattr(struct, field)) for field, _ in struct._fields_)
 

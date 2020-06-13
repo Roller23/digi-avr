@@ -122,7 +122,6 @@ int main(void) {
     assert(mcu.pc == 4);
   )
   run_test("IJMP",
-    // TO DO: test again with MOVW instead of LDI
     execute(
       "LDI R23, 10\n"
       "LDI R30, 4\n" // low byte of the Z Reg

@@ -28,6 +28,7 @@ async def web_console(message):
 
 def start_http(arg):
   Handler = http.server.SimpleHTTPRequestHandler
+  socketserver.TCPServer.allow_reuse_address = True
   with socketserver.TCPServer(("", http_port), Handler) as httpd:
     httpd.serve_forever()
 
