@@ -20,16 +20,6 @@
 #define EXT_IO ((volatile unsigned char *)0x60)
 #define SRAM ((volatile unsigned char *)0x100)
 
-inline int num_len(int num) {
-  if (!num) return 1;
-  int len = 0;
-  while (num) {
-    num /= 10;
-    len++;
-  }
-  return len;
-}
-
 inline void _putchar(int c)  {
   EXT_IO[1] = c;
 }

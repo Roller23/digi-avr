@@ -83,7 +83,7 @@ typedef struct {
   int16_t data_memory_change; // -1 if there was no change, data_memory address otherwise
   uint16_t cycles;
   uint32_t opcode;
-  Instruction_t *instruction;
+  const Instruction_t *instruction;
   void (*exception_handler)(void);
 } ATmega328p_t;
 
@@ -100,27 +100,27 @@ void mcu_send_interrupt(Interrupt_vector_t vector);
 void mcu_set_exception_handler(void (*handler)(void));
 
 static inline void execute_instruction(void);
-static inline void set_mcu_pointers(ATmega328p_t *mcu);
+static inline void set_mcu_pointers(ATmega328p_t *const mcu);
 static void create_lookup_table(void);
-static Instruction_t *find_instruction(uint16_t opcode);
+static const Instruction_t *find_instruction(const uint16_t opcode);
 static inline uint16_t get_opcode16(void);
 static inline uint32_t get_opcode32(void);
 static inline bool check_interrupts(void);
 static inline void handle_interrupt(void);
 
-static inline void stack_push16(uint16_t value);
-static inline void stack_push8(uint8_t value);
+static inline void stack_push16(const uint16_t value);
+static inline void stack_push8(const uint8_t value);
 static inline uint16_t stack_pop16(void);
 static inline uint8_t stack_pop8(void);
 
-static inline uint16_t word_reg_get(uint8_t d);
-static inline uint16_t word_reg_set(uint8_t d, uint16_t value);
+static inline uint16_t word_reg_get(const uint8_t d);
+static inline uint16_t word_reg_set(const uint8_t d, const uint16_t value);
 static inline uint16_t X_reg_get(void);
 static inline uint16_t Y_reg_get(void);
 static inline uint16_t Z_reg_get(void);
-static inline void X_reg_set(uint16_t value);
-static inline void Y_reg_set(uint16_t value);
-static inline void Z_reg_set(uint16_t value);
+static inline void X_reg_set(const uint16_t value);
+static inline void Y_reg_set(const uint16_t value);
+static inline void Z_reg_set(const uint16_t value);
 
 static inline uint64_t get_micro_time(void);
 static inline void throw_exception(const char *cause, ...);
