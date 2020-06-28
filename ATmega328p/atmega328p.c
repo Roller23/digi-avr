@@ -632,7 +632,6 @@ static inline void SPM(const uint32_t opcode){
   *((uint16_t *)(mcu.program_memory + Z_reg_get())) = word_reg_get(0);
   mcu.pc += 1;
 }
-//-----------
 static inline void IN(const uint32_t opcode){
   // 1011 0AAd dddd AAAA
   uint8_t reg_d = (opcode & 0xF0) >> 4;
@@ -785,7 +784,7 @@ static inline void SBRC(const uint32_t opcode) {
   // 1111 110r rrrr 0bbb
   // Skip if R[r](b) is cleared
   uint8_t b = (opcode & 0b111);
-  uint16_t r = (opcode & 0b111110000) >> 4;
+  uint8_t r = (opcode & 0b111110000) >> 4;
   if (!B_GET(mcu.R[r], b)) {
     mcu.skip_next = true;
   }
@@ -796,7 +795,7 @@ static inline void SBRS(const uint32_t opcode) {
   // 1111 111r rrrr 0bbb
   // Skip if R[r](b) is set
   uint8_t b = (opcode & 0b111);
-  uint16_t r = (opcode & 0b111110000) >> 4;
+  uint8_t r = (opcode & 0b111110000) >> 4;
   if (B_GET(mcu.R[r], b)) {
     mcu.skip_next = true;
   }
@@ -806,8 +805,8 @@ static inline void SBRS(const uint32_t opcode) {
 static inline void SBIC(const uint32_t opcode) {
   // 1001 1001 AAAA Abbb
   // Skip if I/O[A](b) is cleared
-  uint16_t b = (opcode & 0b111);
-  uint16_t A = (opcode & 0b11111000) >> 3;
+  uint8_t b = (opcode & 0b111);
+  uint8_t A = (opcode & 0b11111000) >> 3;
   if (!B_GET(mcu.IO[A], b)) {
     mcu.skip_next = true;
   }
@@ -817,8 +816,8 @@ static inline void SBIC(const uint32_t opcode) {
 static inline void SBIS(const uint32_t opcode) {
   // 1001 1011 AAAA Abbb
   // Skip if I/O[A](b) is set
-  uint16_t b = (opcode & 0b111);
-  uint16_t A = (opcode & 0b11111000) >> 3;
+  uint8_t b = (opcode & 0b111);
+  uint8_t A = (opcode & 0b11111000) >> 3;
   if (B_GET(mcu.IO[A], b)) {
     mcu.skip_next = true;
   }
@@ -854,7 +853,7 @@ static inline void SBI(const uint32_t opcode) {
   // Set I/O[A](b)
   uint8_t b = opcode & 0b111;
   uint8_t A = (opcode & 0b11111000) >> 3;
-  mcu.IO[A] |= (1LU << b);
+  mcu.IO[A] |= (1 << b);
   mcu.pc += 1;
 }
 
@@ -863,7 +862,7 @@ static inline void CBI(const uint32_t opcode) {
   // Clear I/O[A](b)
   uint8_t b = opcode & 0b111;
   uint8_t A = (opcode & 0b11111000) >> 3;
-  mcu.IO[A] &= ~(1LU << b);
+  mcu.IO[A] &= ~(1 << b);
   mcu.pc += 1;
 }
 
@@ -922,7 +921,7 @@ static inline void BSET(const uint32_t opcode) {
   // 1001 0100 0sss 1000
   // SREG(s) = 1
   uint8_t s = (opcode & 0b1110000) >> 4;
-  mcu.SREG.value |= (1LU << s);
+  mcu.SREG.value |= (1 << s);
   mcu.pc += 1;
 }
 
@@ -930,7 +929,7 @@ static inline void BCLR(const uint32_t opcode) {
   // 1001 0100 1sss 1000
   // SREG(s) = 0
   uint8_t s = (opcode & 0b1110000) >> 4;
-  mcu.SREG.value &= ~(1LU << s);
+  mcu.SREG.value &= ~(1 << s);
   mcu.pc += 1;
 }
 
@@ -1263,6 +1262,7 @@ bool mcu_load_asm(const char *code) {
   if (file == NULL) {
     return false;
   }
+  fputs(".DEVICE ATmega328P\n", file); // for avra range checks
   fputs(code, file);
   fclose(file);
   int status = system("avra "TMP"_t.asm > /dev/null");
@@ -1270,7 +1270,7 @@ bool mcu_load_asm(const char *code) {
     return false;
   }
   bool loaded = mcu_load_ihex(TMP"_t.hex");
-  char *files[] = {TMP"_t.asm", TMP"_t.hex", TMP"_t.obj",
+  const char *const files[] = {TMP"_t.asm", TMP"_t.hex", TMP"_t.obj",
     TMP"_t.eep.hex", TMP"_t.cof"};
   for (int i = 0; i < sizeof(files) / sizeof(char *); i++) {
     remove(files[i]);
