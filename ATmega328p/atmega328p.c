@@ -1262,7 +1262,7 @@ bool mcu_load_asm(const char *code) {
   if (file == NULL) {
     return false;
   }
-  fputs(".DEVICE ATmega328P\n", file); // for avra range checks
+  fputs(".DEVICE ATmega328P\n", file); // for AVRA range checks
   fputs(code, file);
   fclose(file);
   int status = system("avra "TMP"_t.asm > /dev/null");
