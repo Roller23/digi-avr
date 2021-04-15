@@ -114,7 +114,7 @@ static inline uint16_t stack_pop16(void);
 static inline uint8_t stack_pop8(void);
 
 static inline uint16_t word_reg_get(const uint8_t d);
-static inline uint16_t word_reg_set(const uint8_t d, const uint16_t value);
+static inline void word_reg_set(const uint8_t d, const uint16_t value);
 static inline uint16_t X_reg_get(void);
 static inline uint16_t Y_reg_get(void);
 static inline uint16_t Z_reg_get(void);

@@ -27,6 +27,7 @@
 #endif
 
 #define DEBUG_MODE 1
+#define BUFFER_LENGTH 1024
 
 static inline int print(const char *format, ...) {
   int a = 0;
@@ -1213,11 +1214,10 @@ bool mcu_load_ihex(const char *filename) {
     print("Could not open %s\n", filename);
     return false;
   }
-  int length = 1024;
-  char buffer[length];
-  memset(buffer, 0, length);
+  char buffer[BUFFER_LENGTH];
+  memset(buffer, 0, BUFFER_LENGTH);
   int memory_index = 0;
-  while (fgets(buffer, length, file)) {
+  while (fgets(buffer, BUFFER_LENGTH, file)) {
     char *line = buffer + 1;
     char number_buffer[2];
     memset(number_buffer, 0, 2);
@@ -1251,9 +1251,8 @@ bool mcu_load_ihex(const char *filename) {
       memory_index += sizeof(word);
     }
     free(data_buffer);
-    memset(buffer, 0, length);
+    memset(buffer, 0, BUFFER_LENGTH);
   }
-  print("Done\n");
   return true;
 }
 
@@ -1270,8 +1269,7 @@ bool mcu_load_asm(const char *code) {
     return false;
   }
   bool loaded = mcu_load_ihex(TMP"_t.hex");
-  const char *const files[] = {TMP"_t.asm", TMP"_t.hex", TMP"_t.obj",
-    TMP"_t.eep.hex", TMP"_t.cof"};
+  const char *const files[] = {TMP"_t.asm", TMP"_t.hex", TMP"_t.obj", TMP"_t.eep.hex", TMP"_t.cof"};
   for (int i = 0; i < sizeof(files) / sizeof(char *); i++) {
     remove(files[i]);
   }
@@ -1349,7 +1347,7 @@ static inline uint16_t word_reg_get(const uint8_t d) {
   return (high << 8) | low;
 }
 
-static inline uint16_t word_reg_set(const uint8_t d, const uint16_t value) {
+static inline void word_reg_set(const uint8_t d, const uint16_t value) {
   uint16_t low = value & 0x00FF;
   uint16_t high = (value & 0xFF00) >> 8;
   mcu.R[d] = low;

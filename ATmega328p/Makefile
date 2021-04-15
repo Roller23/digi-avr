@@ -20,8 +20,8 @@ disasm:
 	avr-objdump -m avr -D program.hex
 
 debug:
-	$(CC) -O0 -g -o $(name) tests.c atmega328p.c
-	gdb ./$(name)
+	$(CC) -O3 -g -o $(name) tests.c atmega328p.c
+	lldb ./$(name)
 
 update:
 	git stash
