@@ -9,7 +9,7 @@ API makes it easily embeddable (as a shared library or just by including the sou
 Contains two GUI apps - one that runs in terminal and one that runs in a browser (requires compiling to shared library and setting up a Python server)
 
 ![image](https://user-images.githubusercontent.com/25384028/114919743-ea32a480-9e28-11eb-91af-134661448185.png)
-![image](https://user-images.githubusercontent.com/25384028/114919777-f6b6fd00-9e28-11eb-8676-487eb967dfff.png)
+![image](https://user-images.githubusercontent.com/25384028/114920157-6dec9100-9e29-11eb-9951-b1207a91f67e.png)
 ![image](https://user-images.githubusercontent.com/25384028/114919800-fdde0b00-9e28-11eb-951d-eb61a532789a.png)
 
 TODO:
