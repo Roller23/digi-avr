@@ -1,6 +1,6 @@
 # ATmega328p Emulator
 
-An ATmega328p (commonly found in Arduino devices) written in C. Some parts depend on `avra` and `avr-gcc` toolchains in order to work.
+An ATmega328p (commonly found in Arduino devices) emulator written in C. Some parts depend on `avra` and `avr-gcc` toolchains in order to work.
 
 Supports most of the MCU's functionality - it's able to decode and execute all AVR instructions, it can handle interrupts, supports sleep mode.
 
