@@ -109,6 +109,7 @@ static inline void ADC(const uint32_t opcode) {
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
+
 static inline void ADIW(const uint32_t opcode) {
   // 1001 0110 KKdd KKKK
   uint8_t k = (opcode & 0xF);
@@ -126,7 +127,8 @@ static inline void ADIW(const uint32_t opcode) {
   word_reg_set(reg_d, result);
   mcu.pc += 1;
 }
-static inline void SUB(const uint32_t opcode){
+
+static inline void SUB(const uint32_t opcode) {
   // 0001 10rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -142,7 +144,8 @@ static inline void SUB(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void SUBI(const uint32_t opcode){
+
+static inline void SUBI(const uint32_t opcode) {
   // 0101 kkkk dddd kkkk
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d += 16;
@@ -157,7 +160,8 @@ static inline void SUBI(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void SBC(const uint32_t opcode){
+
+static inline void SBC(const uint32_t opcode) {
   // 0000 10rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -173,7 +177,8 @@ static inline void SBC(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void SBCI(const uint32_t opcode){
+
+static inline void SBCI(const uint32_t opcode) {
   // 0100 kkkk dddd kkkk
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d += 16;
@@ -188,7 +193,8 @@ static inline void SBCI(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void SBIW(const uint32_t opcode){
+
+static inline void SBIW(const uint32_t opcode) {
   // 1001 0111 KKdd KKKK
   uint8_t k = (opcode & 0xF);
   k |= B_GET(opcode, 6) >> 2;
@@ -205,7 +211,8 @@ static inline void SBIW(const uint32_t opcode){
   word_reg_set(reg_d, result);
   mcu.pc += 1;
 }
-static inline void AND(const uint32_t opcode){
+
+static inline void AND(const uint32_t opcode) {
   // 0010 00rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -219,7 +226,8 @@ static inline void AND(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void ANDI(const uint32_t opcode){
+
+static inline void ANDI(const uint32_t opcode) {
   // 0111 KKKK dddd KKKK
   uint8_t k = (opcode & 0xF);
   k |= (opcode & 0xF00) >> 4;
@@ -233,7 +241,8 @@ static inline void ANDI(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void OR(const uint32_t opcode){
+
+static inline void OR(const uint32_t opcode) {
   // 0010 10rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -247,7 +256,8 @@ static inline void OR(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void ORI(const uint32_t opcode){
+
+static inline void ORI(const uint32_t opcode) {
   // 0110 KKKK dddd KKKK
   uint8_t k = (opcode & 0xF);
   k |= (opcode & 0xF00) >> 4;
@@ -261,7 +271,8 @@ static inline void ORI(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void EOR(const uint32_t opcode){
+
+static inline void EOR(const uint32_t opcode) {
   // 0010 01rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -275,7 +286,8 @@ static inline void EOR(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void COM(const uint32_t opcode){
+
+static inline void COM(const uint32_t opcode) {
   // 1001 010d dddd 0000
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -288,7 +300,8 @@ static inline void COM(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void NEG(const uint32_t opcode){
+
+static inline void NEG(const uint32_t opcode) {
   // 1001 010d dddd 0001
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -302,7 +315,8 @@ static inline void NEG(const uint32_t opcode){
   mcu.R[reg_d] = result;
   mcu.pc += 1;
 }
-static inline void INC(const uint32_t opcode){
+
+static inline void INC(const uint32_t opcode) {
   // 1001 010d dddd 0011
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -313,7 +327,8 @@ static inline void INC(const uint32_t opcode){
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.pc += 1;
 }
-static inline void DEC(const uint32_t opcode){
+
+static inline void DEC(const uint32_t opcode) {
   // 1001 010d dddd 1010
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -324,14 +339,16 @@ static inline void DEC(const uint32_t opcode){
   mcu.SREG.flags.S = mcu.SREG.flags.N ^ mcu.SREG.flags.V;
   mcu.pc += 1;
 }
-static inline void SER(const uint32_t opcode){
+
+static inline void SER(const uint32_t opcode) {
   // 1110 1111 dddd 1111
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d += 16;
   mcu.R[reg_d] = 0xFF;
   mcu.pc += 1;
 }
-static inline void MUL(const uint32_t opcode){
+
+static inline void MUL(const uint32_t opcode) {
   // 1001 11rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -343,7 +360,8 @@ static inline void MUL(const uint32_t opcode){
   word_reg_set(0, result);
   mcu.pc += 1;
 }
-static inline void MULS(const uint32_t opcode){
+
+static inline void MULS(const uint32_t opcode) {
   // 0000 0010 dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d += 16;
@@ -355,7 +373,8 @@ static inline void MULS(const uint32_t opcode){
   word_reg_set(0, (uint16_t)result);
   mcu.pc += 1;
 }
-static inline void MULSU(const uint32_t opcode){
+
+static inline void MULSU(const uint32_t opcode) {
   // 0000 0011 0ddd 0rrr
   uint8_t reg_d = (opcode & 0x70) >> 4;
   reg_d += 16;
@@ -367,7 +386,8 @@ static inline void MULSU(const uint32_t opcode){
   word_reg_set(0, (uint16_t)result);
   mcu.pc += 1;
 }
-static inline void FMUL(const uint32_t opcode){
+
+static inline void FMUL(const uint32_t opcode) {
   // 0000 0011 0ddd 1rrr
   uint8_t reg_d = (opcode & 0x70) >> 4;
   reg_d += 16;
@@ -383,7 +403,8 @@ static inline void FMUL(const uint32_t opcode){
   word_reg_set(0, result);
   mcu.pc += 1;
 }
-static inline void FMULS(const uint32_t opcode){
+
+static inline void FMULS(const uint32_t opcode) {
   // 0000 0011 1ddd 0rrr
   uint8_t reg_d = (opcode & 0x70) >> 4;
   reg_d += 16;
@@ -399,7 +420,8 @@ static inline void FMULS(const uint32_t opcode){
   word_reg_set(0, result);
   mcu.pc += 1;
 }
-static inline void FMULSU(const uint32_t opcode){
+
+static inline void FMULSU(const uint32_t opcode) {
   // 0000 0011 1ddd 1rrr
   uint8_t reg_d = (opcode & 0x70) >> 4;
   reg_d += 16;
@@ -416,7 +438,7 @@ static inline void FMULSU(const uint32_t opcode){
   mcu.pc += 1;
 }
 
-static inline void MOV(const uint32_t opcode){
+static inline void MOV(const uint32_t opcode) {
   // 0010 11rd dddd rrrr
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -425,14 +447,16 @@ static inline void MOV(const uint32_t opcode){
   mcu.R[reg_d] = mcu.R[reg_r];
   mcu.pc += 1;  
 }
-static inline void MOVW(const uint32_t opcode){
+
+static inline void MOVW(const uint32_t opcode) {
   // 0000 0001 dddd rrrr
   uint8_t reg_d = ((opcode & 0xF0) >> 4) * 2;
   uint8_t reg_r = (opcode & 0xF) * 2;
   word_reg_set(reg_d, word_reg_get(reg_r));
   mcu.pc += 1;
 }
-static inline void LDI(const uint32_t opcode){
+
+static inline void LDI(const uint32_t opcode) {
   // 1110 kkkk dddd kkkk
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d += 16;
@@ -441,7 +465,8 @@ static inline void LDI(const uint32_t opcode){
   mcu.R[reg_d] = k;
   mcu.pc += 1;  
 }
-static inline void ST_X(const uint32_t opcode){
+
+static inline void ST_X(const uint32_t opcode) {
   // (i)   1001 001r rrrr 1100
   // (ii)  1001 001r rrrr 1101
   // (iii) 1001 001r rrrr 1110
@@ -462,6 +487,7 @@ static inline void ST_X(const uint32_t opcode){
   }
   mcu.pc += 1;
 }
+
 static inline void ST_Y(const uint32_t opcode) {
   // (i)   1000 001r rrrr 1000
   // (ii)  1001 001r rrrr 1001
@@ -489,6 +515,7 @@ static inline void ST_Y(const uint32_t opcode) {
   }
   mcu.pc += 1;
 }
+
 static inline void ST_Z(const uint32_t opcode) {
   // (i)   1000 001r rrrr 0000
   // (ii)  1001 001r rrrr 0001
@@ -516,7 +543,8 @@ static inline void ST_Z(const uint32_t opcode) {
   }
   mcu.pc += 1;
 }
-static inline void STS(const uint32_t opcode){
+
+static inline void STS(const uint32_t opcode) {
   // 1001 001d dddd 0000
   // kkkk kkkk kkkk kkkk
   uint16_t k = opcode & 0xFFFF;
@@ -525,7 +553,8 @@ static inline void STS(const uint32_t opcode){
   mcu.data_memory_change = (int16_t)k;
   mcu.pc += 2;
 }
-static inline void LPM(const uint32_t opcode){
+
+static inline void LPM(const uint32_t opcode) {
   // (i)   1001 0101 1100 1000
   // (ii)  1001 000d dddd 0100
   // (iii) 1001 000d dddd 0101
@@ -545,7 +574,8 @@ static inline void LPM(const uint32_t opcode){
   }
   mcu.pc += 1;
 }
-static inline void LD_X(const uint32_t opcode){
+
+static inline void LD_X(const uint32_t opcode) {
   // (i)   1001 000d dddd 1100
   // (ii)  1001 000d dddd 1101
   // (iii) 1001 000d dddd 1110
@@ -566,6 +596,7 @@ static inline void LD_X(const uint32_t opcode){
   }
   mcu.pc += 1;
 }
+
 static inline void LD_Y(const uint32_t opcode) {
   // (i)   1000 000d dddd 1000
   // (ii)  1001 000d dddd 1001
@@ -593,6 +624,7 @@ static inline void LD_Y(const uint32_t opcode) {
   }
   mcu.pc += 1;
 }
+
 static inline void LD_Z(const uint32_t opcode) {
   // (i)   1000 001d dddd 0000
   // (ii)  1001 001d dddd 0001
@@ -620,7 +652,8 @@ static inline void LD_Z(const uint32_t opcode) {
   }
   mcu.pc += 1;
 }
-static inline void LDS(const uint32_t opcode){
+
+static inline void LDS(const uint32_t opcode) {
   // 1001 000d dddd 0000
   // kkkk kkkk kkkk kkkk
   uint16_t k = opcode & 0xFFFF;
@@ -628,12 +661,13 @@ static inline void LDS(const uint32_t opcode){
   mcu.R[d] = mcu.data_memory[k];
   mcu.pc += 2;
 }
-static inline void SPM(const uint32_t opcode){
+
+static inline void SPM(const uint32_t opcode) {
   // 1001 0101 1110 1000
   *((uint16_t *)(mcu.program_memory + Z_reg_get())) = word_reg_get(0);
   mcu.pc += 1;
 }
-static inline void IN(const uint32_t opcode){
+static inline void IN(const uint32_t opcode) {
   // 1011 0AAd dddd AAAA
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
@@ -641,6 +675,7 @@ static inline void IN(const uint32_t opcode){
   mcu.R[reg_d] = mcu.IO[a];
   mcu.pc += 1;
 }
+
 static inline void OUT(const uint32_t opcode) {
   // 1011 1AAr rrrr AAAA
   uint8_t reg_r = (opcode & 0b111110000) >> 4;
@@ -648,14 +683,16 @@ static inline void OUT(const uint32_t opcode) {
   mcu.IO[a] = mcu.R[reg_r];
   mcu.pc += 1;
 }
-static inline void PUSH(const uint32_t opcode){
+
+static inline void PUSH(const uint32_t opcode) {
   // 1001 001d dddd 1111
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
   stack_push8(mcu.R[reg_d]);
   mcu.pc += 1; 
 }
-static inline void POP(const uint32_t opcode){
+
+static inline void POP(const uint32_t opcode) {
   // 1001 000d dddd 1111
   uint8_t reg_d = (opcode & 0xF0) >> 4;
   reg_d |= B_GET(opcode, 8) >> 4;
