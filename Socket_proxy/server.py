@@ -5,8 +5,6 @@ import http.server
 import socketserver
 import threading
 import ctypes
-import sys
-import os
 import wurlitzer
 import mcu_types
 
@@ -156,7 +154,8 @@ mcu_fn.mcu_execute_cycle.restypes = [ctypes.c_bool]
 mcu_fn.mcu_send_interrupt.argtypes = [ctypes.c_int]
 mcu_fn.mcu_send_interrupt.restypes = []
 
-threading._start_new_thread(start_http, (None, ))
+http_thread = threading.Thread(target=start_http, args=(None, ), daemon=True)
+http_thread.start()
 
 start_server = websockets.serve(ws_server, host, ws_port)
 
